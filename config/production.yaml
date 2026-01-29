@@ -1,0 +1,13 @@
+# 生产环境配置
+app:
+  title: 'Vue Naive Admin'
+  env: 'production'
+
+# Vite 配置
+vite:
+  useHash: false
+  publicPath: '/'
+
+# Axios 基础路径
+api:
+  baseUrl: 'https://m1.apifoxmock.com/m1/3776410-3408296-default'

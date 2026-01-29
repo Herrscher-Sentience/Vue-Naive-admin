@@ -1,0 +1,17 @@
+# 开发环境配置
+app:
+  title: 'Vue Naive Admin'
+  env: 'development'
+
+# Vite 配置
+vite:
+  useHash: true
+  publicPath: '/'
+
+# Axios 基础路径
+api:
+  baseUrl: '/api'
+
+# 代理配置-target
+proxy:
+  target: 'http://localhost:3030'  # 修改为你的后端服务地址
