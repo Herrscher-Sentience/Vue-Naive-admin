@@ -1,12 +1,10 @@
 import axios from 'axios'
 import { request } from '@/utils'
 
-export default {
-  getUserPermission: () => request.get('/permission/getUserPermissionByToken'),
-  getButtons: ({ parentId }) => request.get(`/permission/button/${parentId}`),
-  getComponents: () => axios.get(`${import.meta.env.VITE_PUBLIC_PATH}components.json`),
-  addPermission: (data) => request.post('/permission', data),
-  savePermission: (id, data) => request.patch(`/permission/${id}`, data),
-  deletePermission: (id) => request.delete(`permission/${id}`),
-  getRolePermissions: () => request.get('/role/permissions/tree')
-}
+export const getUserPermissionByToken = () => request.get('/permission/getUserPermissionByToken')
+export const getButtons = ({ parentId }) => request.get(`/permission/button/${parentId}`)
+export const getComponents = () => axios.get(`${import.meta.env.VITE_PUBLIC_PATH}components.json`)
+export const addPermission = (data) => request.post('/permission', data)
+export const savePermission = (id, data) => request.patch(`/permission/${id}`, data)
+export const deletePermission = (id) => request.delete(`permission/${id}`)
+export const getRolePermissions = () => request.get('/role/permissions/tree')

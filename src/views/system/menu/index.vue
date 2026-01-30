@@ -23,7 +23,7 @@
           </div>
           <n-descriptions :column="2" bordered label-placement="left">
             <n-descriptions-item label="编码">
-              {{ currentMenu.code }}
+              {{ currentMenu.perms }}
             </n-descriptions-item>
             <n-descriptions-item label="名称">
               {{ currentMenu.name }}
@@ -47,8 +47,8 @@
             <n-descriptions-item label="是否显示">
               {{ currentMenu.show ? '是' : '否' }}
             </n-descriptions-item>
-            <n-descriptions-item label="是否启用">
-              {{ currentMenu.enable ? '是' : '否' }}
+            <n-descriptions-item label="是否隐藏路由">
+              {{ currentMenu.hidden === '1' ? '是' : '否' }}
             </n-descriptions-item>
             <n-descriptions-item label="KeepAlive">
               {{ currentMenu.keepAlive ? '是' : '否' }}
@@ -71,8 +71,8 @@
           <BasicTable
             ref="tableRef"
             :columns="btnsColumns"
-            :get-data="permission.getButtons"
-            :query-items="{ parentId: currentMenu.id }"
+            :get-data="getButtons"
+            :query-items="{ menuId: currentMenu.id }"
             :scroll-x="-1"
           />
         </template>
@@ -86,10 +86,9 @@
 <script setup>
 import { NButton, NSwitch } from 'naive-ui'
 import { onMounted } from 'vue'
-import { permission } from '@/api'
 import BasicTable from '@/components/BasicTable/src/BasicTable.vue'
 import { CommonPage } from '@/components/CommonPage/index.js'
-import { getMenuList } from '@/views/system/menu/api.js'
+import { deletePermission, getButtons, getMenuList, savePermission } from '@/views/system/menu/api.js'
 import MenuTree from '@/views/system/menu/components/MenuTree.vue'
 import ResAddOrEdit from '@/views/system/menu/components/ResAddOrEdit.vue'
 
@@ -121,6 +120,7 @@ onMounted(() => {
 const modalRef = ref(null)
 
 const handleEdit = (item = {}) => {
+  console.log(item)
   modalRef.value?.handleOpen({
     action: 'edit',
     title: `编辑菜单 - ${item.name}`,
@@ -131,18 +131,18 @@ const handleEdit = (item = {}) => {
 
 const btnsColumns = [
   { title: '名称', key: 'name' },
-  { title: '编码', key: 'code' },
+  { title: '编码', key: 'perms' },
   {
     title: '状态',
-    key: 'enable',
+    key: 'status',
     render: (row) =>
       h(
         NSwitch,
         {
           size: 'small',
           rubberBand: false,
-          value: row.enable,
-          loading: !!row.enableLoading,
+          value: row.status === '1',
+          loading: !!row.statusLoading,
           onUpdateValue: () => handleEnable(row)
         },
         {
@@ -196,8 +196,10 @@ watch(
   () => currentMenu.value,
   async (v) => {
     await nextTick()
-    if (v)
+    if (v) {
       tableRef.value.handleSearch()
+    }
+    console.log(currentMenu.value)
   }
 )
 
@@ -229,7 +231,7 @@ const handleDeleteBtn = (id) => {
     async onPositiveClick() {
       try {
         d.loading = true
-        await permission.deletePermission(id)
+        await deletePermission(id)
         $message.success('删除成功')
         tableRef.value.handleSearch()
         d.loading = false
@@ -244,17 +246,17 @@ const handleDeleteBtn = (id) => {
 
 const handleEnable = async (item) => {
   try {
-    item.enableLoading = true
-    await permission.savePermission(item.id, {
-      enable: !item.enable
+    item.statusLoading = true
+    await savePermission(item.id, {
+      status: item.status === '1' ? '0' : '1'
     })
     $message.success('操作成功')
     tableRef.value?.handleSearch()
-    item.enableLoading = false
+    item.statusLoading = false
   }
   catch (error) {
     console.error(error)
-    item.enableLoading = false
+    item.statusLoading = false
   }
 }
 </script>

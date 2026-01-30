@@ -1,5 +1,6 @@
 import { cloneDeep } from 'lodash-es'
-import { auth, permission } from '@/api'
+import { auth } from '@/api'
+import { getUserPermissionByToken } from '@/api/modules/permission.js'
 import { basePermissions } from '@/settings'
 
 export const getUserInfo = async () => {
@@ -51,7 +52,7 @@ function transformMenuToPermission(menuItem) {
 export const getUserPermission = async () => {
   let asyncPermissions = []
   try {
-    const { data: result } = await permission.getUserPermission()
+    const { data: result } = await getUserPermissionByToken()
 
     if (result.menu) {
       asyncPermissions = result.menu.map((item) => transformMenuToPermission(item))

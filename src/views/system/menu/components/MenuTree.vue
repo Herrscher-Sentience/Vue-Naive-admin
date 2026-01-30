@@ -21,7 +21,8 @@
         :selected-keys="[currentMenu?.id]"
         :show-irrelevant-nodes="false"
         block-line
-        key-field="id" label-field="name"
+        key-field="id"
+        label-field="name"
       />
     </n-space>
 
@@ -32,7 +33,7 @@
 <script setup>
 import { NButton } from 'naive-ui'
 import { withModifiers } from 'vue'
-import api from '../api'
+import { deletePermission } from '@/views/system/menu/api.js'
 import ResAddOrEdit from './ResAddOrEdit.vue'
 
 defineProps({
@@ -50,13 +51,13 @@ const emit = defineEmits(['refresh', 'update:currentMenu'])
 const pattern = ref('')
 const expandedKeys = ref([])
 
-function onUpdateExpandedKeys(keys) {
+const onUpdateExpandedKeys = (keys) => {
   expandedKeys.value = keys
 }
 
 const modalRef = ref(null)
 
-async function handleAdd(data = {}) {
+const handleAdd = async (data = {}) => {
   modalRef.value?.handleOpen({
     action: 'add',
     title: '新增菜单',
@@ -65,15 +66,15 @@ async function handleAdd(data = {}) {
   })
 }
 
-function onSelect(keys, option, { action, node }) {
+const onSelect = (keys, option, { action, node }) => {
   emit('update:currentMenu', action === 'select' ? node : null)
 }
 
-function renderPrefix({ option }) {
+const renderPrefix = ({ option }) => {
   return h('i', { class: `${option.icon}?mask text-16` })
 }
 
-function renderSuffix({ option }) {
+const renderSuffix = ({ option }) => {
   return [
     h(
       NButton,
@@ -100,13 +101,13 @@ function renderSuffix({ option }) {
   ]
 }
 
-function handleDelete(item) {
+const handleDelete = (item) => {
   $dialog.confirm({
     content: `确认删除【${item.name}】？`,
     async confirm() {
       try {
         $message.loading('正在删除', { key: 'deleteMenu' })
-        await api.deletePermission(item.id)
+        await deletePermission(item.id)
         $message.success('删除成功', { key: 'deleteMenu' })
         emit('refresh')
         emit('update:currentMenu', null)
