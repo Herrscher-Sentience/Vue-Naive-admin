@@ -141,9 +141,9 @@
           }"
           :span="12"
           label="排序"
-          path="sortNo"
+          path="order"
         >
-          <n-input-number v-model:value="modalForm.sortNo" />
+          <n-input-number v-model:value="modalForm.order" />
         </n-form-item-gi>
       </n-grid>
     </n-form>

@@ -21,6 +21,8 @@ export const getComponents = () => axios.get(`${import.meta.env.VITE_PUBLIC_PATH
  * @param {object} data - 要添加的权限数据对象
  * @returns {Promise} - 返回一个Promise对象，包含请求的结果
  */
-export const addPermission = (data) => request.post('/permission', data) // 发送POST请求到'/permission'接口，传入data参数
+export const addPermission = (data) => request.post('/permission', data)
+
 export const savePermission = (id, data) => request.patch(`/permission/${id}`, data)
+
 export const deletePermission = (id) => request.delete(`permission/${id}`)

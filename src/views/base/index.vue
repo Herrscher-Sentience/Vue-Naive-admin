@@ -1,11 +1,3 @@
-<!--------------------------------
- - @Author: Ronnie Zhang
- - @LastEditor: Ronnie Zhang
- - @LastEditTime: 2023/12/04 22:46:57
- - @Email: zclzone@outlook.com
- - Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
- --------------------------------->
-
 <template>
   <CommonPage show-footer>
     <n-space size="large">
@@ -106,7 +98,7 @@ function handleDelete() {
     },
     cancel() {
       $message.warning('已取消')
-    },
+    }
   })
 }
 
@@ -132,7 +124,7 @@ function notify(type) {
     content: '说点啥呢',
     meta: '想不出来',
     duration: 2500,
-    keepAliveOnHover: true,
+    keepAliveOnHover: true
   })
 }
 </script>

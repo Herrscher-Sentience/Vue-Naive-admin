@@ -2,71 +2,81 @@ import { useAuthStore, usePermissionStore, useUserStore } from '@/store'
 import { getUserInfo, getUserPermission } from '@/store/helper'
 
 const WHITE_LIST = ['/login', '/404']
+
+/**
+ * 创建路由权限守卫
+ * @param {import('vue-router').Router} router
+ */
 export function createPermissionGuard(router) {
+  const routeComponents = import.meta.glob('/src/views/**/*.vue')
+
   router.beforeEach(async (to) => {
     const authStore = useAuthStore()
     const token = authStore.accessToken
 
-    /** 没有token */
+    /* ---------- 未登录 ---------- */
     if (!token) {
       if (WHITE_LIST.includes(to.path))
         return true
-      return { path: 'login', query: { ...to.query, redirect: to.path } }
+
+      return {
+        path: '/login',
+        query: { redirect: to.fullPath }
+      }
     }
 
-    // 有token的情况
+    /* ---------- 已登录访问登录页 ---------- */
     if (to.path === '/login')
       return { path: '/' }
+
     if (WHITE_LIST.includes(to.path))
       return true
 
     const userStore = useUserStore()
     const permissionStore = usePermissionStore()
+
+    /* ---------- 初始化用户 & 权限 & 动态路由（只执行一次） ---------- */
     if (!userStore.userInfo) {
-      const [user, menus] = await Promise.all([getUserInfo(), getUserPermission()])
+      const [user, menus] = await Promise.all([
+        getUserInfo(),
+        getUserPermission()
+      ])
 
       userStore.setUser(user)
       permissionStore.setPermissions(menus)
-      const routeComponents = import.meta.glob('@/views/**/*.vue')
+
       permissionStore.accessRoutes.forEach((route) => {
-        const componentKey = route.component
-        if (componentKey && routeComponents[componentKey]) {
-          route.component = routeComponents[componentKey]
+        // 防止重复注册
+        if (router.hasRoute(route.name))
+          return
+
+        const component = routeComponents[route.component]
+        if (!component) {
+          // 组件路径不合法，直接跳过
+          console.warn(
+            `[permission] Component not found: ${route.component}`
+          )
+          return
         }
-        else if (componentKey) {
-          // 尝试其他可能的路径格式
-          const alternativePaths = [
-            componentKey,
-            componentKey.replace('@/views/', '/src/views/'),
-            componentKey.replace('@/', '/src/')
-          ]
-          for (const path of alternativePaths) {
-            if (routeComponents[path]) {
-              route.component = routeComponents[path]
-              break
-            }
-          }
-          if (!route.component || typeof route.component !== 'function') {
-            // console.warn(`Component not found for route ${route.name} with component path: ${componentKey}`)
-          }
-        }
-        if (route.component && typeof route.component === 'function') {
-          !router.hasRoute(route.name) && router.addRoute(route)
-        }
-        else {
-          // console.warn(`Skipping route ${route.name} due to missing or invalid component`)
-        }
+
+        router.addRoute({
+          ...route,
+          component
+        })
       })
+
+      // 重新进入当前路由，触发刚注册的动态路由
       return { ...to, replace: true }
     }
 
-    const routes = router.getRoutes()
-
-    if (routes.find((route) => route.name === to.name)) {
+    /* ---------- 路由存在性校验 ---------- */
+    if (router.hasRoute(to.name))
       return true
-    }
 
-    // 路由不存在，返回 404
-    return { name: '404', query: { path: to.fullPath } }
+    /* ---------- 兜底 404 ---------- */
+    return {
+      name: '404',
+      query: { path: to.fullPath }
+    }
   })
 }
