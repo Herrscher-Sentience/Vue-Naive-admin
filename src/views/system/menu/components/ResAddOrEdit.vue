@@ -1,81 +1,22 @@
 <template>
-  <BasicModal ref="modalRef">
+  <BasicModal ref="modalRef" width="1000px">
     <n-form
       ref="modalFormRef"
-      :label-width="100"
+      :label-width="130"
       :model="modalForm"
       label-placement="left"
       require-mark-placement="left"
     >
       <n-grid :cols="24" :x-gap="24">
-        <n-form-item-gi :span="12" label="所属菜单" path="parentId">
-          <n-tree-select
-            v-model:value="modalForm.parentId"
-            :disabled="parentIdDisabled"
-            :options="menuOptions"
-            clearable
-            key-field="id"
-            label-field="name"
-            placeholder="根菜单"
-          />
-        </n-form-item-gi>
-        <n-form-item-gi :rule="required" :span="12" path="name">
+        <n-form-item-gi :span="12" path="url">
           <template #label>
-            <QuestionLabel content="标题" label="名称" />
+            <QuestionLabel content="菜单路径" label="菜单路径" />
           </template>
-          <n-input v-model:value="modalForm.name" />
+          <n-input v-model:value="modalForm.url" placeholder="/dashboard" />
         </n-form-item-gi>
-        <n-form-item-gi :span="12" path="perms">
+        <n-form-item-gi :span="12" path="component">
           <template #label>
-            <QuestionLabel content="如果是菜单则对应前端路由的name，使用大驼峰" label="编码" />
-          </template>
-          <n-input v-model:value="modalForm.perms" />
-        </n-form-item-gi>
-        <n-form-item-gi
-          v-if="modalForm.type === 'MENU'"
-          :rule="{
-            trigger: ['blur', 'change'],
-            type: 'string',
-            message: '必须是/、http、https开头',
-            validator(rule, value) {
-              if (value) {
-                return /\/|http|https/.test(value)
-              }
-              return true
-            },
-          }"
-          :span="12"
-          path="url"
-        >
-          <template #label>
-            <QuestionLabel content="父级菜单可不填" label="路由地址" />
-          </template>
-          <n-input v-model:value="modalForm.path" />
-        </n-form-item-gi>
-        <n-form-item-gi v-if="modalForm.type === 'MENU'" :span="12" path="icon">
-          <template #label>
-            <QuestionLabel
-              content="如material-symbols:help，图标库地址: https://icones.js.org/collection/all"
-              label="菜单图标"
-            />
-          </template>
-          <n-select v-model:value="modalForm.icon" :options="iconOptions" clearable filterable />
-        </n-form-item-gi>
-        <n-form-item-gi v-if="modalForm.type === 'MENU'" :span="12" path="layout">
-          <template #label>
-            <QuestionLabel
-              content="对应layouts文件夹下的目录名, 为空则默认为 default"
-              label="layout"
-            />
-          </template>
-          <n-select v-model:value="modalForm.layout" :options="layoutOptions" clearable />
-        </n-form-item-gi>
-        <n-form-item-gi v-if="modalForm.type === 'MENU'" :span="24" path="component">
-          <template #label>
-            <QuestionLabel
-              content="前端组件的路径，以 /src 开头，父级菜单可不填"
-              label="组件路径"
-            />
+            <QuestionLabel content="前端组件" label="前端组件" />
           </template>
           <n-select
             v-model:value="modalForm.component"
@@ -83,14 +24,69 @@
             clearable
             filterable
             tag
+            placeholder="layouts/default/index"
           />
         </n-form-item-gi>
-
-        <n-form-item-gi v-if="modalForm.type === 'MENU'" :span="12" path="show">
+        <n-form-item-gi :span="12" path="componentName">
           <template #label>
-            <QuestionLabel content="控制是否在菜单栏显示，不影响路由注册" label="显示状态" />
+            <QuestionLabel content="组件名称" label="组件名称" />
           </template>
-          <n-switch v-model:value="modalForm.show">
+          <n-input v-model:value="modalForm.componentName" />
+        </n-form-item-gi>
+        <n-form-item-gi :span="12" path="redirect">
+          <template #label>
+            <QuestionLabel content="默认跳转地址" label="默认跳转地址" />
+          </template>
+          <n-input v-model:value="modalForm.redirect" placeholder="/dashboard/analysis" />
+        </n-form-item-gi>
+        <n-form-item-gi :span="12" path="customIcon">
+          <template #label>
+            <QuestionLabel content="上传自定义图标" label="自定义菜单图标" />
+          </template>
+          <n-upload
+            v-model:file-list="modalForm.customIconList"
+            :max="1"
+            accept="image/*"
+            list-type="image-card"
+            :custom-request="handleUpload"
+            @remove="handleRemoveIcon"
+          >
+            点击上传
+          </n-upload>
+        </n-form-item-gi>
+        <n-form-item-gi :span="12" path="icon">
+          <template #label>
+            <QuestionLabel
+              content="如material-symbols:help，图标库地址: https://icones.js.org/collection/all"
+              label="菜单图标"
+            />
+          </template>
+          <n-select v-model:value="modalForm.icon" :options="iconOptions" clearable filterable placeholder="ant-design:home-outlined" />
+        </n-form-item-gi>
+        <n-form-item-gi :span="12" path="sortNo">
+          <template #label>
+            <QuestionLabel content="排序" label="排序" />
+          </template>
+          <n-input-number v-model:value="modalForm.sortNo" />
+        </n-form-item-gi>
+        <n-form-item-gi :span="12" path="isRoute">
+          <template #label>
+            <QuestionLabel content="是否路由菜单" label="是否路由菜单" />
+          </template>
+          <n-switch v-model:value="modalForm.isRoute">
+            <template #checked>
+              是
+            </template>
+            <template #unchecked>
+              否
+            </template>
+          </n-switch>
+        </n-form-item-gi>
+        <n-form-item-gi :span="12" path="hidden">
+          <template #label>
+            <QuestionLabel content="隐藏路由" label="隐藏路由" />
+          </template>
+          <n-switch v-model:value="modalForm.hidden">
             <template #checked>
               隐藏
             </template>
@@ -99,28 +95,22 @@
             </template>
           </n-switch>
         </n-form-item-gi>
-        <n-form-item-gi :span="12" path="status">
+        <n-form-item-gi :span="12" path="hideTab">
           <template #label>
-            <QuestionLabel
-              content="如果是菜单，禁用后将不添加到路由表，无法进入此页面"
-              label="状态"
-            />
+            <QuestionLabel content="隐藏Tab" label="隐藏Tab" />
           </template>
-          <n-switch :value="modalForm.status === '1'" @update:value="(val) => modalForm.status = val ? '1' : '0'">
+          <n-switch v-model:value="modalForm.hideTab">
             <template #checked>
-              启用
+              隐藏
             </template>
             <template #unchecked>
-              禁用
+              显示
             </template>
           </n-switch>
         </n-form-item-gi>
-        <n-form-item-gi v-if="modalForm.type === 'MENU'" :span="12" path="keepAlive">
+        <n-form-item-gi :span="12" path="keepAlive">
           <template #label>
-            <QuestionLabel
-              content="设置keepAlive需将组件的name设置成当前菜单的perms"
-              label="KeepAlive"
-            />
+            <QuestionLabel content="是否缓存路由" label="是否缓存路由" />
           </template>
           <n-switch v-model:value="modalForm.keepAlive">
             <template #checked>
@@ -131,19 +121,31 @@
             </template>
           </n-switch>
         </n-form-item-gi>
-        <n-form-item-gi
-          v-if="modalForm.type === 'MENU'"
-          :rule="{
-            type: 'number',
-            required: true,
-            message: '此为必填项',
-            trigger: ['blur', 'change'],
-          }"
-          :span="12"
-          label="排序"
-          path="order"
-        >
-          <n-input-number v-model:value="modalForm.order" />
+        <n-form-item-gi :span="12" path="alwaysShow">
+          <template #label>
+            <QuestionLabel content="聚合路由" label="聚合路由" />
+          </template>
+          <n-switch v-model:value="modalForm.alwaysShow">
+            <template #checked>
+              是
+            </template>
+            <template #unchecked>
+              否
+            </template>
+          </n-switch>
+        </n-form-item-gi>
+        <n-form-item-gi :span="12" path="internalOrExternal">
+          <template #label>
+            <QuestionLabel content="打开方式" label="打开方式" />
+          </template>
+          <n-switch v-model:value="modalForm.internalOrExternal">
+            <template #checked>
+              外部
+            </template>
+            <template #unchecked>
+              内部
+            </template>
+          </n-switch>
         </n-form-item-gi>
       </n-grid>
     </n-form>
@@ -158,64 +160,107 @@ import { useForm, useModal } from '@/composables'
 import { addPermission, savePermission } from '@/views/system/menu/api.js'
 import QuestionLabel from './QuestionLabel.vue'
 
-const props = defineProps({
-  menus: {
-    type: Array,
-    required: true
-  }
-})
 const emit = defineEmits(['refresh'])
 
-const menuOptions = computed(() => {
-  return [{ name: '根菜单', id: '', children: props.menus || [] }]
-})
 const componentOptions = pagePathes.map((path) => ({ label: path, value: path }))
 const iconOptions = icons.map((item) => ({
   label: () =>
     h('span', { class: 'flex items-center' }, [h('i', { class: `${item} text-18 mr-8` }), item]),
   value: item
 }))
-const layoutOptions = [
-  { label: '跟随系统', value: '' },
-  { label: '简约-simple', value: 'simple' },
-  { label: '通用-normal', value: 'normal' },
-  { label: '全面-full', value: 'full' },
-  { label: '空白-empty', value: 'empty' }
-]
-const required = {
-  required: true,
-  message: '此为必填项',
-  trigger: ['blur', 'change']
+const defaultForm = {
+  status: '1',
+  hidden: 0,
+  layout: '',
+  menuType: 1,
+  keepAlive: 0,
+  isLeaf: 1,
+  hideTab: 0,
+  alwaysShow: 0,
+  internalOrExternal: 0,
+  isRoute: 1,
+  sortNo: 10,
+  permsType: '0',
+  url: '/dashboard',
+  component: 'layouts/default/index',
+  redirect: '',
+  icon: '',
+  customIcon: '',
+  customIconList: []
 }
-
-const defaultForm = { status: '1', show: 0, layout: '' }
 const [modalFormRef, modalForm, validation] = useForm()
 const [modalRef, okLoading] = useModal()
 
 const modalAction = ref('')
-const parentIdDisabled = ref(false)
 
 function handleOpen(options = {}) {
   const { action, row = {}, ...rest } = options
   modalAction.value = action
   modalForm.value = { ...defaultForm, ...row }
-  parentIdDisabled.value = !!row.parentId && row.type === 'BUTTON'
+
+  // 将数字转换为布尔值，确保 n-switch 组件正确工作
+  // 注意：isRoute 和 internalOrExternal 在 DTO 中定义为数字类型，不转换
+  const booleanFields = ['hidden', 'alwaysShow', 'isLeaf', 'keepAlive', 'hideTab']
+  booleanFields.forEach((key) => {
+    if (typeof modalForm.value[key] === 'number') {
+      modalForm.value[key] = modalForm.value[key] === 1
+    }
+  })
+
+  if (row.customIcon) {
+    modalForm.value.customIconList = [{
+      id: 'custom',
+      name: 'custom-icon',
+      status: 'finished',
+      url: row.customIcon
+    }]
+  }
   modalRef.value.open({ ...rest, onOk: onSave })
 }
 
+function handleUpload({ file, onFinish, onError }) {
+  // 这里可以替换为实际的文件上传API
+  // 模拟上传成功
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    modalForm.value.customIcon = e.target.result
+    onFinish()
+  }
+  reader.onerror = () => {
+    onError()
+  }
+  reader.readAsDataURL(file.file)
+}
+
+function handleRemoveIcon() {
+  modalForm.value.customIcon = ''
+}
+
 async function onSave() {
+  console.log(modalForm.value)
+
   await validation()
   okLoading.value = true
   try {
     let newFormData
     if (!modalForm.value.parentId)
       modalForm.value.parentId = null
+
+    // 转换布尔值为数字（isRoute 和 internalOrExternal 在 DTO 中定义为数字类型）
+    const formData = { ...modalForm.value }
+    const numberFields = ['isRoute', 'internalOrExternal']
+    numberFields.forEach((key) => {
+      if (typeof formData[key] === 'boolean') {
+        formData[key] = formData[key] ? 1 : 0
+      }
+    })
+
     if (modalAction.value === 'add') {
-      const res = await addPermission(modalForm.value)
+      const res = await addPermission(formData)
       newFormData = res.data
     }
     else if (modalAction.value === 'edit') {
-      await savePermission(modalForm.value.id, modalForm.value)
+      await savePermission(formData.id, formData)
     }
     okLoading.value = false
     $message.success('保存成功')

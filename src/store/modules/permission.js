@@ -1,4 +1,3 @@
-import { hyphenate } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { isExternal } from '@/utils'
 
@@ -18,8 +17,8 @@ export const usePermissionStore = defineStore('permission', {
         .sort((a, b) => a.order - b.order)
     },
     getMenuItem(item, parent) {
-      const route = this.generateRoute(item, item.show ? null : parent?.key)
-      if (item.enable && route.path && !route.path.startsWith('http')) {
+      const route = this.generateRoute(item, parent?.key)
+      if (route.path) {
         this.accessRoutes.push(route)
       }
       const menuItem = {
@@ -39,22 +38,25 @@ export const usePermissionStore = defineStore('permission', {
         if (!menuItem.children.length)
           delete menuItem.children
       }
-      if (!item.show)
-        return null
       return menuItem
     },
     generateRoute(item, parentKey) {
       let originPath
+      let path = item.path
+      let component = item.component
+
+      // 处理外链菜单
       if (isExternal(item.path)) {
         originPath = item.path
-        item.component = '/src/views/iframe/index.vue'
-        item.path = `/iframe/${hyphenate(item.code)}`
+        component = '/src/views/iframe/index.vue'
+        path = `/iframe/${item.code}`
       }
+
       return {
         name: item.code,
-        path: item.path,
+        path,
         redirect: item.redirect,
-        component: item.component,
+        component,
         meta: {
           originPath,
           icon: `${item.icon}?mask`,

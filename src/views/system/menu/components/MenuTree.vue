@@ -11,7 +11,7 @@
       </div>
 
       <n-tree
-        :data="treeData"
+        :data="normalizedTreeData"
         :expanded-keys="expandedKeys"
         :on-update:expanded-keys="onUpdateExpandedKeys"
         :on-update:selected-keys="onSelect"
@@ -32,11 +32,13 @@
 
 <script setup>
 import { NButton } from 'naive-ui'
-import { withModifiers } from 'vue'
+import { h, ref, watch, withModifiers } from 'vue'
 import { deletePermission } from '@/views/system/menu/api.js'
 import ResAddOrEdit from './ResAddOrEdit.vue'
 
-defineProps({
+/* ---------- props / emits ---------- */
+
+const props = defineProps({
   treeData: {
     type: Array,
     default: () => []
@@ -46,18 +48,99 @@ defineProps({
     default: () => null
   }
 })
+
 const emit = defineEmits(['refresh', 'update:currentMenu'])
+
+/* ---------- 状态 ---------- */
 
 const pattern = ref('')
 const expandedKeys = ref([])
+const modalRef = ref(null)
+const normalizedTreeData = ref([])
+
+/* ---------- 数字 → 布尔 ---------- */
+
+const BOOLEAN_FIELDS = [
+  'hidden',
+  'alwaysShow',
+  'isLeaf',
+  'isRoute',
+  'internalOrExternal',
+  'keepAlive',
+  'hideTab'
+]
+
+function normalizeTree(list = []) {
+  return list.map((item) => {
+    const node = { ...item }
+
+    // 数字 → boolean
+    const BOOLEAN_FIELDS = [
+      'hidden',
+      'alwaysShow',
+      'isLeaf',
+      'isRoute',
+      'internalOrExternal',
+      'keepAlive',
+      'hideTab'
+    ]
+
+    BOOLEAN_FIELDS.forEach((key) => {
+      if (typeof node[key] === 'number') {
+        node[key] = node[key] === 1
+      }
+    })
+
+    // ⭐ 核心逻辑
+    if (Array.isArray(node.children) && node.children.length > 0) {
+      node.children = normalizeTree(node.children)
+    }
+    else {
+      // ❗ 不管 isLeaf 是多少，只要没子节点，就删
+      delete node.children
+    }
+
+    return node
+  })
+}
+
+/* ---------- 展开父节点（只看 normalize 后的数据） ---------- */
+
+function collectExpandKeys(list = [], keys = []) {
+  list.forEach((item) => {
+    if (item.children && item.children.length) {
+      keys.push(item.id)
+      collectExpandKeys(item.children, keys)
+    }
+  })
+  return keys
+}
+
+/* ---------- watch ---------- */
+
+watch(
+  () => props.treeData,
+  (val) => {
+    const normalized = normalizeTree(val)
+    normalizedTreeData.value = normalized
+    expandedKeys.value = collectExpandKeys(normalized)
+  },
+  { immediate: true }
+)
+
+/* ---------- Tree 事件 ---------- */
 
 const onUpdateExpandedKeys = (keys) => {
   expandedKeys.value = keys
 }
 
-const modalRef = ref(null)
+const onSelect = (keys, option, { action, node }) => {
+  emit('update:currentMenu', action === 'select' ? node : null)
+}
 
-const handleAdd = async (data = {}) => {
+/* ---------- 操作 ---------- */
+
+const handleAdd = (data = {}) => {
   modalRef.value?.handleOpen({
     action: 'add',
     title: '新增菜单',
@@ -66,57 +149,45 @@ const handleAdd = async (data = {}) => {
   })
 }
 
-const onSelect = (keys, option, { action, node }) => {
-  emit('update:currentMenu', action === 'select' ? node : null)
-}
-
-const renderPrefix = ({ option }) => {
-  return h('i', { class: `${option.icon}?mask text-16` })
-}
-
-const renderSuffix = ({ option }) => {
-  return [
-    h(
-      NButton,
-      {
-        text: true,
-        type: 'primary',
-        title: '新增下级菜单',
-        size: 'tiny',
-        onClick: withModifiers(() => handleAdd({ parentId: option.id }), ['stop'])
-      },
-      { default: () => '新增' }
-    ),
-    h(
-      NButton,
-      {
-        text: true,
-        type: 'error',
-        size: 'tiny',
-        style: 'margin-left: 12px;',
-        onClick: withModifiers(() => handleDelete(option), ['stop'])
-      },
-      { default: () => '删除' }
-    )
-  ]
-}
-
 const handleDelete = (item) => {
   $dialog.confirm({
     content: `确认删除【${item.name}】？`,
     async confirm() {
-      try {
-        $message.loading('正在删除', { key: 'deleteMenu' })
-        await deletePermission(item.id)
-        $message.success('删除成功', { key: 'deleteMenu' })
-        emit('refresh')
-        emit('update:currentMenu', null)
-      }
-      catch (error) {
-        console.error(error)
-        $message.destroy('deleteMenu')
-      }
+      await deletePermission(item.id)
+      emit('refresh')
+      emit('update:currentMenu', null)
     }
   })
 }
+
+/* ---------- Tree 自定义渲染 ---------- */
+
+const renderPrefix = ({ option }) => {
+  if (!option.icon)
+    return null
+  return h('i', { class: `${option.icon} text-16` })
+}
+
+const renderSuffix = ({ option }) => [
+  h(
+    NButton,
+    {
+      text: true,
+      size: 'tiny',
+      onClick: withModifiers(() => handleAdd({ parentId: option.id }), ['stop'])
+    },
+    { default: () => '新增' }
+  ),
+  h(
+    NButton,
+    {
+      text: true,
+      size: 'tiny',
+      type: 'error',
+      style: 'margin-left: 8px;',
+      onClick: withModifiers(() => handleDelete(option), ['stop'])
+    },
+    { default: () => '删除' }
+  )
+]
 </script>

@@ -29,7 +29,7 @@
               {{ currentMenu.name }}
             </n-descriptions-item>
             <n-descriptions-item label="路由地址">
-              {{ currentMenu.path ?? '--' }}
+              {{ currentMenu.url ?? '--' }}
             </n-descriptions-item>
             <n-descriptions-item label="组件路径">
               {{ currentMenu.component ?? '--' }}
@@ -45,16 +45,16 @@
               {{ currentMenu.layout || '跟随系统' }}
             </n-descriptions-item>
             <n-descriptions-item label="是否显示">
-              {{ currentMenu.show ? '是' : '否' }}
+              {{ !currentMenu.hidden ? '是' : '否' }}
             </n-descriptions-item>
             <n-descriptions-item label="是否隐藏路由">
-              {{ currentMenu.hidden === '1' ? '是' : '否' }}
+              {{ !currentMenu.hideTab ? '是' : '否' }}
             </n-descriptions-item>
             <n-descriptions-item label="KeepAlive">
               {{ currentMenu.keepAlive ? '是' : '否' }}
             </n-descriptions-item>
             <n-descriptions-item label="排序">
-              {{ currentMenu.order ?? '--' }}
+              {{ currentMenu.sortNo ?? '--' }}
             </n-descriptions-item>
           </n-descriptions>
 
@@ -106,7 +106,7 @@ const initData = async (data) => {
   const { data: result } = await getMenuList()
   treeData.value = result || []
   treeLoading.value = false
-  console.log(treeData.value)
+  console.log('treeData', treeData.value)
 
   if (data) {
     currentMenu.value = data
