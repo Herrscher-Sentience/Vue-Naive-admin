@@ -1,262 +1,304 @@
 <template>
   <CommonPage>
-    <div class="flex">
-      <n-spin :show="treeLoading" size="small">
-        <MenuTree
-          v-model:current-menu="currentMenu"
-          :tree-data="treeData"
-          class="w-320 shrink-0"
-          @refresh="initData"
-        />
-      </n-spin>
-
-      <div class="ml-40 w-0 flex-1">
-        <template v-if="currentMenu">
-          <div class="flex justify-between">
-            <h3 class="mb-12">
-              {{ currentMenu.name }}
-            </h3>
-            <NButton size="small" type="primary" @click="handleEdit(currentMenu)">
-              <i class="i-material-symbols:edit-outline mr-4 text-14" />
-              编辑
+    <div class="flex flex-col overflow-hidden">
+      <!-- 顶部操作栏 -->
+      <div class="shrink-0 mb-12">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <n-input v-model:value="pattern" clearable placeholder="搜索" class="w-240 mr-12" />
+            <NButton class="mr-8" size="small" @click="expandAll">
+              <i class="i-material-symbols:unfold-more mr-4 text-14" />
+              展开全部
             </NButton>
-          </div>
-          <n-descriptions :column="2" bordered label-placement="left">
-            <n-descriptions-item label="编码">
-              {{ currentMenu.perms }}
-            </n-descriptions-item>
-            <n-descriptions-item label="名称">
-              {{ currentMenu.name }}
-            </n-descriptions-item>
-            <n-descriptions-item label="路由地址">
-              {{ currentMenu.url ?? '--' }}
-            </n-descriptions-item>
-            <n-descriptions-item label="组件路径">
-              {{ currentMenu.component ?? '--' }}
-            </n-descriptions-item>
-            <n-descriptions-item label="菜单图标">
-              <span v-if="currentMenu.icon" class="flex items-center">
-                <i :class="`${currentMenu.icon}?mask text-22 mr-8`" />
-                <span class="opacity-50">{{ currentMenu.icon }}</span>
-              </span>
-              <span v-else>无</span>
-            </n-descriptions-item>
-            <n-descriptions-item label="layout">
-              {{ currentMenu.layout || '跟随系统' }}
-            </n-descriptions-item>
-            <n-descriptions-item label="是否显示">
-              {{ !currentMenu.hidden ? '是' : '否' }}
-            </n-descriptions-item>
-            <n-descriptions-item label="是否隐藏路由">
-              {{ !currentMenu.hideTab ? '是' : '否' }}
-            </n-descriptions-item>
-            <n-descriptions-item label="KeepAlive">
-              {{ currentMenu.keepAlive ? '是' : '否' }}
-            </n-descriptions-item>
-            <n-descriptions-item label="排序">
-              {{ currentMenu.sortNo ?? '--' }}
-            </n-descriptions-item>
-          </n-descriptions>
-
-          <div class="mt-32 flex justify-between">
-            <h3 class="mb-12">
-              按钮
-            </h3>
-            <NButton size="small" type="primary" @click="handleAddBtn">
-              <i class="i-fe:plus mr-4 text-14" />
+            <NButton class="mr-12" size="small" @click="collapseAll">
+              <i class="i-material-symbols:unfold-less mr-4 text-14" />
+              折叠全部
+            </NButton>
+            <NButton type="primary" @click="handleAdd()">
+              <i class="i-material-symbols:add mr-4 text-14" />
               新增
             </NButton>
           </div>
+        </div>
+      </div>
 
-          <BasicTable
-            ref="tableRef"
-            :columns="btnsColumns"
-            :get-data="getButtons"
-            :query-items="{ menuId: currentMenu.id }"
-            :scroll-x="-1"
-          />
-        </template>
-        <n-empty v-else class="h-450 f-c-c" description="请选择菜单查看详情" size="large" />
+      <!-- 菜单表格 -->
+      <div class="flex-1">
+        <n-data-table
+          :columns="columns"
+          :data="normalizedTreeData"
+          :row-key="rowKey"
+          :expanded-row-keys="expandedKeys"
+          :row-props="rowProps"
+          size="small"
+          :scroll-x="1000"
+          max-height="65vh"
+          bordered
+          striped
+          :single-line="false"
+          @update:expanded-row-keys="onUpdateExpandedKeys"
+        />
       </div>
     </div>
+
     <ResAddOrEdit ref="modalRef" :menus="treeData" @refresh="initData" />
   </CommonPage>
 </template>
 
 <script setup>
-import { NButton, NSwitch } from 'naive-ui'
-import { onMounted } from 'vue'
-import BasicTable from '@/components/BasicTable/src/BasicTable.vue'
+import { NButton, NDropdown, NIcon } from 'naive-ui'
+import { onMounted, ref, watch } from 'vue'
 import { CommonPage } from '@/components/CommonPage/index.js'
-import { deletePermission, getButtons, getMenuList, savePermission } from '@/views/system/menu/api.js'
-import MenuTree from '@/views/system/menu/components/MenuTree.vue'
+import { deletePermission, getMenuList } from '@/views/system/menu/api.js'
 import ResAddOrEdit from '@/views/system/menu/components/ResAddOrEdit.vue'
 
 const treeData = ref([])
-const treeLoading = ref(false)
-const tableRef = ref(null)
-const currentMenu = ref(null)
+const pattern = ref('')
+const expandedKeys = ref([])
+const normalizedTreeData = ref([])
+const allExpandKeys = ref([])
+const modalRef = ref(null)
 
-const initData = async (data) => {
-  if (data?.type === 'BUTTON') {
-    tableRef.value.handleSearch()
-    return
+const rowKey = (row) => row.id
+
+function normalizeTree(list = []) {
+  return list.map((item) => {
+    const node = { ...item }
+
+    const BOOLEAN_FIELDS = [
+      'hidden',
+      'alwaysShow',
+      'isLeaf',
+      'isRoute',
+      'internalOrExternal',
+      'keepAlive',
+      'hideTab'
+    ]
+
+    BOOLEAN_FIELDS.forEach((key) => {
+      if (typeof node[key] === 'number') {
+        node[key] = node[key] === 1
+      }
+    })
+
+    if (Array.isArray(node.children) && node.children.length > 0) {
+      node.children = normalizeTree(node.children)
+    }
+    else {
+      delete node.children
+    }
+
+    return node
+  })
+}
+
+function collectExpandKeys(list = [], keys = []) {
+  list.forEach((item) => {
+    if (item.children && item.children.length) {
+      keys.push(item.id)
+      collectExpandKeys(item.children, keys)
+    }
+  })
+  return keys
+}
+
+watch(
+  () => treeData.value,
+  (val) => {
+    const normalized = normalizeTree(val)
+    normalizedTreeData.value = normalized
+    allExpandKeys.value = collectExpandKeys(normalized)
+    // 默认折叠所有节点
+    expandedKeys.value = []
+  },
+  { immediate: true }
+)
+
+/* ---------- 展开/折叠全部 ---------- */
+
+const expandAll = () => {
+  expandedKeys.value = [...allExpandKeys.value]
+}
+
+const collapseAll = () => {
+  expandedKeys.value = []
+}
+
+const columns = [
+  {
+    title: '菜单名称',
+    key: 'name',
+    width: 200,
+    ellipsis: {
+      tooltip: true
+    }
+  },
+  {
+    title: '菜单类型',
+    key: 'menuType',
+    width: 100,
+    render: (row) => {
+      const typeMap = {
+        0: '一级菜单',
+        1: '子菜单',
+        2: '按钮权限'
+      }
+      return typeMap[row.menuType] ?? '--'
+    }
+  },
+  {
+    title: '菜单图标',
+    key: 'icon',
+    width: 80,
+    align: 'center',
+    render: (row) => {
+      if (!row.icon) {
+        return '--'
+      }
+      return h('div', { class: 'flex items-center justify-center' }, [
+        h('i', { class: `${row.icon} text-18` })
+      ])
+    }
+  },
+  {
+    title: '前端组件',
+    key: 'component',
+    width: 220,
+    ellipsis: {
+      tooltip: true
+    },
+    render: (row) => row.component || '--'
+  },
+  {
+    title: '菜单路径',
+    key: 'url',
+    width: 200,
+    ellipsis: {
+      tooltip: true
+    },
+    render: (row) => row.url || '--'
+  },
+  {
+    title: '排序',
+    key: 'sortNo',
+    width: 80,
+    render: (row) => row.sortNo ?? '--'
+  },
+  {
+    title: '操作',
+    key: 'actions',
+    width: 120,
+    fixed: 'right',
+    render: (row) => {
+      return h('div', { class: 'flex' }, [
+        h(
+          NButton,
+          {
+            size: 'small',
+            type: 'primary',
+            text: true,
+            onClick: () => handleEdit(row)
+          },
+          { default: () => '编辑' }
+        ),
+        h(
+          NDropdown,
+          {
+            trigger: 'hover',
+            options: [
+              {
+                label: '添加下级',
+                key: 'add',
+                icon: () => h(NIcon, null, { default: () => h('i', { class: 'i-material-symbols:add text-16' }) })
+              },
+              {
+                label: '删除',
+                key: 'delete',
+                icon: () => h(NIcon, null, { default: () => h('i', { class: 'i-material-symbols:delete text-16' }) })
+              }
+            ],
+            onSelect: (key) => handleDropdownSelect(key, row)
+          },
+          {
+            default: () =>
+              h(
+                NButton,
+                {
+                  size: 'small',
+                  text: true,
+                  style: 'margin-left: 8px;'
+                },
+                {
+                  default: () => '更多',
+                  icon: () => h(NIcon, null, { default: () => h('i', { class: 'i-material-symbols:expand-more text-16' }) })
+                }
+              )
+          }
+        )
+      ])
+    }
   }
-  treeLoading.value = true
+]
+
+const rowProps = () => {
+  return {
+    style: {
+      cursor: 'pointer'
+    }
+  }
+}
+
+const onUpdateExpandedKeys = (keys) => {
+  expandedKeys.value = keys
+}
+
+/* ---------- 数据初始化 ---------- */
+
+const initData = async () => {
   const { data: result } = await getMenuList()
   treeData.value = result || []
-  treeLoading.value = false
-  console.log('treeData', treeData.value)
-
-  if (data) {
-    currentMenu.value = data
-  }
 }
 
 onMounted(() => {
   initData()
 })
 
-const modalRef = ref(null)
+/* ---------- 操作 ---------- */
 
-const handleEdit = (item = {}) => {
-  console.log(item)
-  modalRef.value?.handleOpen({
-    action: 'edit',
-    title: `编辑菜单 - ${item.name}`,
-    row: item,
-    okText: '保存'
-  })
-}
-
-const btnsColumns = [
-  { title: '名称', key: 'name' },
-  { title: '编码', key: 'perms' },
-  {
-    title: '状态',
-    key: 'status',
-    render: (row) =>
-      h(
-        NSwitch,
-        {
-          size: 'small',
-          rubberBand: false,
-          value: row.status === '1',
-          loading: !!row.statusLoading,
-          onUpdateValue: () => handleEnable(row)
-        },
-        {
-          checked: () => '启用',
-          unchecked: () => '停用'
-        }
-      )
-  },
-  {
-    title: '操作',
-    key: 'actions',
-    width: 320,
-    align: 'right',
-    fixed: 'right',
-    render(row) {
-      return [
-        h(
-          NButton,
-          {
-            key: 'edit',
-            size: 'small',
-            type: 'primary',
-            style: 'margin-left: 12px;',
-            onClick: () => handleEditBtn(row)
-          },
-          {
-            default: () => '编辑',
-            icon: () => h('i', { class: 'i-material-symbols:edit-outline text-14' })
-          }
-        ),
-        h(
-          NButton,
-          {
-            key: 'delete',
-            size: 'small',
-            type: 'error',
-            style: 'margin-left: 12px;',
-            onClick: () => handleDeleteBtn(row.id)
-          },
-          {
-            default: () => '删除',
-            icon: () => h('i', { class: 'i-material-symbols:delete-outline text-14' })
-          }
-        )
-      ]
-    }
-  }
-]
-
-watch(
-  () => currentMenu.value,
-  async (v) => {
-    await nextTick()
-    if (v) {
-      tableRef.value.handleSearch()
-    }
-    console.log(currentMenu.value)
-  }
-)
-
-// 添加按钮
-const handleAddBtn = () => {
+const handleAdd = (data = {}) => {
   modalRef.value?.handleOpen({
     action: 'add',
-    title: '新增按钮',
-    row: { type: 'BUTTON', parentId: currentMenu.value.id },
+    title: '新增菜单',
+    row: { type: 'MENU', ...data },
     okText: '保存'
   })
 }
 
-const handleEditBtn = (row) => {
+const handleEdit = (row) => {
   modalRef.value?.handleOpen({
     action: 'edit',
-    title: `编辑按钮 - ${row.name}`,
+    title: `编辑菜单 - ${row.name}`,
     row,
     okText: '保存'
   })
 }
 
-const handleDeleteBtn = (id) => {
-  const d = $dialog.warning({
-    content: '确定删除？',
-    title: '提示',
-    positiveText: '确定',
-    negativeText: '取消',
-    async onPositiveClick() {
-      try {
-        d.loading = true
-        await deletePermission(id)
-        $message.success('删除成功')
-        tableRef.value.handleSearch()
-        d.loading = false
-      }
-      catch (error) {
-        console.error(error)
-        d.loading = false
-      }
+const handleDelete = (item) => {
+  $dialog.confirm({
+    content: `确认删除【${item.name}】？`,
+    async confirm() {
+      await deletePermission(item.id)
+      initData()
     }
   })
 }
 
-const handleEnable = async (item) => {
-  try {
-    item.statusLoading = true
-    await savePermission(item.id, {
-      status: item.status === '1' ? '0' : '1'
-    })
-    $message.success('操作成功')
-    tableRef.value?.handleSearch()
-    item.statusLoading = false
+const handleDropdownSelect = (key, row) => {
+  if (key === 'add') {
+    handleAdd({ parentId: row.id })
   }
-  catch (error) {
-    console.error(error)
-    item.statusLoading = false
+  else if (key === 'delete') {
+    handleDelete(row)
   }
 }
 </script>
