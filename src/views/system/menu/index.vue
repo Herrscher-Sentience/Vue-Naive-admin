@@ -284,6 +284,10 @@ const handleEdit = (row) => {
 }
 
 const handleDelete = (item) => {
+  console.log(
+    item
+  )
+
   $dialog.confirm({
     content: `确认删除【${item.name}】？`,
     async confirm() {

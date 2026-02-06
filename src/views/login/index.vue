@@ -116,7 +116,7 @@ const initCaptcha = throttle(async () => {
 
 const quickLogin = () => {
   loginInfo.value.username = 'admin'
-  loginInfo.value.password = 'admin'
+  loginInfo.value.password = 'a123456'
   handleLogin(true)
 }
 
