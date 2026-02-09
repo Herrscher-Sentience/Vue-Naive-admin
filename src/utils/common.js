@@ -1,12 +1,3 @@
-/**********************************
- * @FilePath: common.js
- * @Author: Ronnie Zhang
- * @LastEditor: Ronnie Zhang
- * @LastEditTime: 2023/12/04 22:45:46
- * @Email: zclzone@outlook.com
- * Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
- **********************************/
-
 import dayjs from 'dayjs'
 
 /**
@@ -89,7 +80,7 @@ export function debounce(method, wait, immediate) {
  * @returns 睡一会儿，让子弹暂停一下
  */
 export function sleep(time) {
-  return new Promise(resolve => setTimeout(resolve, time))
+  return new Promise((resolve) => setTimeout(resolve, time))
 }
 
 /**

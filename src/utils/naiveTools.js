@@ -1,12 +1,3 @@
-/**********************************
- * @FilePath: naiveTools.js
- * @Author: Ronnie Zhang
- * @LastEditor: Ronnie Zhang
- * @LastEditTime: 2023/12/04 22:45:20
- * @Email: zclzone@outlook.com
- * Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
- **********************************/
-
 import * as NaiveUI from 'naive-ui'
 import { useAppStore } from '@/store'
 import { isNullOrUndef } from '@/utils'
@@ -38,7 +29,7 @@ export function setupMessage(NMessage) {
 
     showMessage(type, content, option = {}) {
       if (Array.isArray(content)) {
-        return content.forEach(msg => NMessage[type](msg, option))
+        return content.forEach((msg) => NMessage[type](msg, option))
       }
 
       if (!option.key) {
@@ -56,7 +47,7 @@ export function setupMessage(NMessage) {
           duration: 0,
           onAfterLeave: () => {
             delete this.message[option.key]
-          },
+          }
         })
       }
       this.removeMessage(option.key, option.duration)
@@ -96,7 +87,7 @@ export function setupDialog(NDialog) {
       onPositiveClick: option.confirm,
       onNegativeClick: option.cancel,
       onMaskClick: option.cancel,
-      ...option,
+      ...option
     })
   }
 
@@ -107,11 +98,11 @@ export function setupNaiveDiscreteApi() {
   const appStore = useAppStore()
   const configProviderProps = computed(() => ({
     theme: appStore.isDark ? NaiveUI.darkTheme : undefined,
-    themeOverrides: useAppStore().naiveThemeOverrides,
+    themeOverrides: useAppStore().naiveThemeOverrides
   }))
   const { message, dialog, notification, loadingBar } = NaiveUI.createDiscreteApi(
     ['message', 'dialog', 'notification', 'loadingBar'],
-    { configProviderProps },
+    { configProviderProps }
   )
 
   window.$loadingBar = loadingBar

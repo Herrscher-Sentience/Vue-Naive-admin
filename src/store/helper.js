@@ -11,14 +11,16 @@ export const getUserInfo = async () => {
 // 将后端菜单数据转换为前端权限格式
 function transformMenuToPermission(menuItem) {
   const transformed = {
-    code: menuItem.id,
+    id: menuItem.id,
+    parentId: menuItem.parentId,
+    code: menuItem.code || menuItem.id,
     name: menuItem.name,
-    type: 'MENU',
-    path: menuItem.url,
+    type: menuItem.type, // 保留原始 type 字段（DIRECTORY 或 MENU）
+    path: menuItem.path,
     icon: menuItem.icon || '',
-    order: menuItem.sort ?? 0,
-    enable: menuItem.status === '1',
-    show: menuItem.menuHide === 0
+    order: menuItem.order ?? menuItem.orderNo ?? 0,
+    enable: menuItem.enable !== undefined ? menuItem.enable : menuItem.status === 1,
+    show: menuItem.show !== undefined ? menuItem.show : true
   }
 
   // 处理 component 字段
@@ -34,9 +36,9 @@ function transformMenuToPermission(menuItem) {
     transformed.component = componentPath
   }
 
-  // 处理外部链接
-  if (menuItem.openStyle === 1 && menuItem.url && (menuItem.url.startsWith('http://') || menuItem.url.startsWith('https://'))) {
-    transformed.path = menuItem.url
+  // 处理外链菜单
+  if (menuItem.isExt === 0 && menuItem.path && (menuItem.path.startsWith('http://') || menuItem.path.startsWith('https://'))) {
+    transformed.isExt = 0
   }
 
   // 递归处理子菜单
@@ -53,14 +55,18 @@ export const getUserPermission = async () => {
   let asyncPermissions = []
   try {
     const { data: result } = await getUserPermissionByToken()
+    console.log('后端返回的原始菜单数据:', result.menu)
 
     if (result.menu) {
       asyncPermissions = result.menu.map((item) => transformMenuToPermission(item))
+      console.log('转换后的菜单数据:', asyncPermissions)
     }
   }
   catch (error) {
     console.error(error)
   }
 
-  return cloneDeep(basePermissions).concat(asyncPermissions)
+  const finalPermissions = cloneDeep(basePermissions).concat(asyncPermissions)
+  console.log('最终权限数据:', finalPermissions)
+  return finalPermissions
 }

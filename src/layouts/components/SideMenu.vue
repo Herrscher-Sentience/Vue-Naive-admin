@@ -21,6 +21,7 @@ const router = useRouter()
 const route = useRoute()
 const appStore = useAppStore()
 const permissionStore = usePermissionStore()
+console.log(permissionStore.menus)
 
 const activeKey = computed(() => route.meta?.parentKey || route.name)
 
@@ -31,17 +32,20 @@ watch(route, async () => {
 })
 
 function handleMenuSelect(key, item) {
-  if (isExternal(item.originPath)) {
+  console.log('handleMenuSelect key:', key, 'item:', item)
+  // 检查是否为外链（path 以 http:// 或 https:// 开头）
+  if (isExternal(item.path)) {
     $dialog.confirm({
       type: 'info',
       title: '请选择打开方式',
       positiveText: '外链打开',
       negativeText: '在本站内嵌打开',
       confirm() {
-        window.open(item.originPath)
+        window.open(item.path)
       },
       cancel: () => {
-        router.push(item.path)
+        // 使用 iframe 路由路径：/iframe/{code}
+        router.push(`/iframe/${item.code}`)
       }
     })
   }

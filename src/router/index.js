@@ -55,12 +55,19 @@ const transformMenusToRoutes = (menus, viewModules) => {
   const routes = []
 
   menus.forEach((menu) => {
+    // 过滤掉未启用或不显示的菜单
+    if (menu.enable === false || menu.show === false)
+      return
+
+    let route = null
+
     // 处理外链菜单（以 http 或 https 开头的路径）
     if (menu.path && (menu.path.startsWith('http://') || menu.path.startsWith('https://'))) {
-      const route = {
+      const iframeComponent = viewModules['/src/views/iframe/index.vue']
+      route = {
         path: `/iframe/${menu.code}`,
         name: menu.code,
-        component: viewModules['/src/views/iframe/index.vue'],
+        component: iframeComponent,
         meta: {
           title: menu.name,
           icon: menu.icon,
@@ -68,18 +75,11 @@ const transformMenusToRoutes = (menus, viewModules) => {
           keepAlive: false
         }
       }
-      routes.push(route)
-      return
     }
-
-    // 没有组件的，直接跳过（按钮权限）
-    if (!menu.component)
-      return
-
     // 处理特殊的 component 路径（包含模板字符串的路径，如 {{ window._CONFIG['domianURL'] }}）
-    if (menu.component.includes('{{') || menu.component.includes('${')) {
+    else if (menu.component && (menu.component.includes('{{') || menu.component.includes('${'))) {
       // 这些菜单使用 iframe 显示外部链接
-      const route = {
+      route = {
         path: `/iframe/${menu.code}`,
         name: menu.code,
         component: viewModules['/src/views/iframe/index.vue'],
@@ -90,46 +90,65 @@ const transformMenusToRoutes = (menus, viewModules) => {
           keepAlive: false
         }
       }
-      routes.push(route)
-      return
     }
+    // 处理普通组件菜单
+    else if (menu.component) {
+      // 处理 component 路径
+      let componentPath = menu.component
+      // 如果不是完整路径，添加 /src/ 前缀
+      if (!componentPath.startsWith('/src/')) {
+        componentPath = `/src/${componentPath}`
+      }
+      // 如果没有 .vue 后缀，添加
+      if (!componentPath.endsWith('.vue')) {
+        componentPath = `${componentPath}.vue`
+      }
 
-    // 处理 component 路径
-    let componentPath = menu.component
-    // 如果不是完整路径，添加 /src/ 前缀
-    if (!componentPath.startsWith('/src/')) {
-      componentPath = `/src/${componentPath}`
-    }
-    // 如果没有 .vue 后缀，添加
-    if (!componentPath.endsWith('.vue')) {
-      componentPath = `${componentPath}.vue`
-    }
+      const component = viewModules[componentPath]
 
-    const component = viewModules[componentPath]
+      if (!component) {
+        console.warn('[router] component not found:', componentPath, 'menu:', menu.name)
+      }
+      else {
+        // 确保 path 以 / 开头
+        let routePath = menu.path || `/${menu.name}`
+        if (!routePath.startsWith('/')) {
+          routePath = `/${routePath}`
+        }
 
-    if (!component) {
-      console.warn('[router] component not found:', componentPath, 'menu:', menu.name)
-      return
-    }
+        // 确保 name 是字符串类型
+        const routeName = String(menu.code || menu.name || menu.id)
 
-    const route = {
-      path: menu.path || `/${menu.name}`,
-      name: menu.code || menu.name || menu.id,
-      component,
-      meta: {
-        title: menu.name,
-        icon: menu.icon,
-        keepAlive: !!menu.keepAlive
+        route = {
+          path: routePath,
+          name: routeName,
+          component,
+          meta: {
+            title: menu.name,
+            icon: menu.icon,
+            keepAlive: !!menu.keepAlive
+          }
+        }
       }
     }
 
-    // 递归处理子菜单
-    if (menu.children && menu.children.length) {
-      route.children = transformMenusToRoutes(menu.children, viewModules)
+    // 如果有路由配置，添加到 routes
+    if (route) {
+      // 递归处理子菜单
+      if (menu.children && menu.children.length) {
+        route.children = transformMenusToRoutes(menu.children, viewModules)
+      }
+      routes.push(route)
     }
-
-    routes.push(route)
+    else {
+      // 没有路由配置的菜单（如只有子菜单的父菜单），只递归处理子菜单
+      if (menu.children && menu.children.length) {
+        const childRoutes = transformMenusToRoutes(menu.children, viewModules)
+        routes.push(...childRoutes)
+      }
+    }
   })
+  console.log('组装路由结果', routes)
 
   return routes
 }
@@ -222,12 +241,14 @@ const createPermissionGuard = (router) => {
         getUserInfo(),
         getUserPermission()
       ])
+      console.log('接口返回', menus)
 
       userStore.setUser(user)
 
       // 菜单 → 路由
       const accessRoutes = transformMenusToRoutes(menus, viewModules)
       // 设置菜单数据（原始菜单数据，用于侧边栏显示）
+      // 传递原始菜单数据，保留 parentId 等字段
       permissionStore.setPermissions(menus)
 
       // 注册动态路由

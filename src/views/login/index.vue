@@ -13,7 +13,7 @@
           {{ title }}
         </h2>
         <n-input
-          v-model:value="loginInfo.username"
+          v-model:value="loginInfo.userName"
           :maxlength="20"
           autofocus
           class="mt-32 h-40 items-center"
@@ -102,7 +102,7 @@ const router = useRouter()
 const route = useRoute()
 const title = import.meta.env.VITE_TITLE
 
-const loginInfo = ref({ username: '', password: '' })
+const loginInfo = ref({ userName: '', password: '' })
 const captchaImage = ref('')
 const captchaId = ref('')
 const loading = ref(false)
@@ -115,14 +115,14 @@ const initCaptcha = throttle(async () => {
 }, 500)
 
 const quickLogin = () => {
-  loginInfo.value.username = 'admin'
+  loginInfo.value.userName = 'admin'
   loginInfo.value.password = 'admin'
   handleLogin(true)
 }
 
 const handleLogin = async (isQuick) => {
-  const { username, password, captchaCode } = loginInfo.value
-  if (!username || !password) {
+  const { userName, password, captchaCode } = loginInfo.value
+  if (!userName || !password) {
     return $message.warning('请输入用户名和密码')
   }
   if (!isQuick && !captchaCode) {
@@ -131,9 +131,9 @@ const handleLogin = async (isQuick) => {
   try {
     loading.value = true
     $message.loading('正在验证，请稍后...', { key: 'login' })
-    const { data } = await auth.login({ username, password: password.toString(), captchaCode, captchaId: captchaId.value, isQuick })
+    const { data } = await auth.login({ userName, password: password.toString(), captchaCode, captchaId: captchaId.value, isQuick })
     if (isRemember.value) {
-      lStorage.set('loginInfo', { username, password })
+      lStorage.set('loginInfo', { userName, password })
     }
     else {
       lStorage.remove('loginInfo')
@@ -175,7 +175,7 @@ const onLoginSuccess = async (data = {}) => {
 // 初始化
 const localLoginInfo = lStorage.get('loginInfo')
 if (localLoginInfo) {
-  loginInfo.value.username = localLoginInfo.username || ''
+  loginInfo.value.userName = localLoginInfo.userName || ''
   loginInfo.value.password = localLoginInfo.password || ''
 }
 initCaptcha()
