@@ -14,13 +14,14 @@ function transformMenuToPermission(menuItem) {
     id: menuItem.id,
     parentId: menuItem.parentId,
     code: menuItem.code || menuItem.id,
-    name: menuItem.name,
+    name: menuItem.menuName || menuItem.name || '',
     type: menuItem.type, // 保留原始 type 字段（DIRECTORY 或 MENU）
     path: menuItem.path,
     icon: menuItem.icon || '',
-    order: menuItem.order ?? menuItem.orderNo ?? 0,
+    order: menuItem.order ?? menuItem.orderNum ?? 0,
     enable: menuItem.enable !== undefined ? menuItem.enable : menuItem.status === 1,
-    show: menuItem.show !== undefined ? menuItem.show : true
+    show: menuItem.show !== undefined ? menuItem.show : (menuItem.visible === 0),
+    keepAlive: menuItem.keepAlive !== undefined ? menuItem.keepAlive : (menuItem.isCache === 0 ? 1 : 0)
   }
 
   // 处理 component 字段
@@ -37,8 +38,8 @@ function transformMenuToPermission(menuItem) {
   }
 
   // 处理外链菜单
-  if (menuItem.isExt === 0 && menuItem.path && (menuItem.path.startsWith('http://') || menuItem.path.startsWith('https://'))) {
-    transformed.isExt = 0
+  if (menuItem.isFrame === 0 && menuItem.path && (menuItem.path.startsWith('http://') || menuItem.path.startsWith('https://'))) {
+    transformed.isFrame = 0
   }
 
   // 递归处理子菜单

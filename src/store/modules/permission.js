@@ -17,6 +17,16 @@ export const usePermissionStore = defineStore('permission', {
         .map((item) => this.getMenuItem(item))
         .filter((item) => !!item)
         .sort((a, b) => a.order - b.order)
+
+      // 添加首页菜单到菜单数组开头
+      const homeMenuItem = {
+        label: '首页',
+        key: 'Home',
+        path: '/',
+        icon: () => h('i', { class: 'i-fe:home text-16' }),
+        order: -1 // 确保排在最前面
+      }
+      this.menus.unshift(homeMenuItem)
     },
     getMenuItem(item, parent) {
       const route = this.generateRoute(item, parent?.key)

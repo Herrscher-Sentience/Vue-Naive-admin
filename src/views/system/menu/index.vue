@@ -135,15 +135,15 @@ const columns = [
   },
   {
     title: '菜单类型',
-    key: 'menuType',
+    key: 'type',
     width: 100,
     render: (row) => {
       const typeMap = {
-        0: '一级菜单',
-        1: '子菜单',
-        2: '按钮权限'
+        DIRECTORY: '目录',
+        MENU: '菜单',
+        BUTTON: '按钮'
       }
-      return typeMap[row.menuType] ?? '--'
+      return typeMap[row.type] ?? '--'
     }
   },
   {
@@ -171,18 +171,18 @@ const columns = [
   },
   {
     title: '菜单路径',
-    key: 'url',
+    key: 'path',
     width: 200,
     ellipsis: {
       tooltip: true
     },
-    render: (row) => row.url || '--'
+    render: (row) => row.path || '--'
   },
   {
     title: '排序',
-    key: 'sortNo',
+    key: 'orderNo',
     width: 80,
-    render: (row) => row.sortNo ?? '--'
+    render: (row) => row.orderNo ?? '--'
   },
   {
     title: '操作',

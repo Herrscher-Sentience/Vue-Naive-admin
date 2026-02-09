@@ -3,10 +3,10 @@ import { request } from '@/utils'
 
 /**
  * 获取菜单列表数据
- * 该函数通过调用API接口获取系统的菜单列表信息
+ * 该函数通过调用API接口获取系统的菜单按钮列表信息
  * @returns {Promise} 返回一个Promise对象，包含菜单列表数据
  */
-export const getMenuList = () => request.get('/permission/menuList')
+export const getMenuList = () => request.get('/menu/list')
 
 export const getButtons = ({ menuId }) => request.get(`/permission/buttons/${menuId}`)
 
@@ -21,8 +21,8 @@ export const getComponents = () => axios.get(`${import.meta.env.VITE_PUBLIC_PATH
  * @param {object} data - 要添加的权限数据对象
  * @returns {Promise} - 返回一个Promise对象，包含请求的结果
  */
-export const addPermission = (data) => request.post('/permission', data)
+export const addPermission = (data) => request.post('/menu', data)
 
-export const savePermission = (id, data) => request.patch(`/permission/${id}`, data)
+export const savePermission = (id, data) => request.patch(`/menu/${id}`, data)
 
-export const deletePermission = (id) => request.delete(`permission/${id}`)
+export const deletePermission = (id) => request.delete(`menu/${id}`)
