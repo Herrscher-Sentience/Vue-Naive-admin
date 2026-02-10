@@ -265,7 +265,7 @@ const handleAdd = (data = {}) => {
   modalRef.value?.handleOpen({
     action: 'add',
     title: '新增菜单',
-    row: { type: 'MENU', ...data },
+    row: { menuType: 'C', ...data },
     okText: '保存'
   })
 }

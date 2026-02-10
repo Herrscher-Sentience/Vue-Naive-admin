@@ -61,6 +61,17 @@ const transformMenusToRoutes = (menus, viewModules) => {
 
     let route = null
 
+    // 解析路由参数（query 字段，JSON 格式字符串）
+    let defaultQuery = {}
+    if (menu.query) {
+      try {
+        defaultQuery = typeof menu.query === 'string' ? JSON.parse(menu.query) : menu.query
+      }
+      catch (e) {
+        console.warn('[router] 解析路由参数失败:', menu.query, 'menu:', menu.name, e)
+      }
+    }
+
     // 处理外链菜单（以 http 或 https 开头的路径）
     if (menu.path && (menu.path.startsWith('http://') || menu.path.startsWith('https://'))) {
       const iframeComponent = viewModules['/src/views/iframe/index.vue']
@@ -72,7 +83,8 @@ const transformMenusToRoutes = (menus, viewModules) => {
           title: menu.name,
           icon: menu.icon,
           originPath: menu.path,
-          keepAlive: false
+          keepAlive: false,
+          defaultQuery
         }
       }
     }
@@ -87,7 +99,8 @@ const transformMenusToRoutes = (menus, viewModules) => {
           title: menu.name,
           icon: menu.icon,
           originPath: menu.path,
-          keepAlive: false
+          keepAlive: false,
+          defaultQuery
         }
       }
     }
@@ -126,7 +139,8 @@ const transformMenusToRoutes = (menus, viewModules) => {
           meta: {
             title: menu.name,
             icon: menu.icon,
-            keepAlive: !!menu.keepAlive
+            keepAlive: !!menu.keepAlive,
+            defaultQuery
           }
         }
       }
@@ -213,6 +227,22 @@ const createPermissionGuard = (router) => {
   router.beforeEach(async (to) => {
     const authStore = useAuthStore()
     const token = authStore.accessToken
+
+    /* ---------- 处理默认路由参数 ---------- */
+    const defaultQuery = to.meta?.defaultQuery
+    if (defaultQuery && Object.keys(defaultQuery).length > 0) {
+      // 合并默认参数到 query 中，用户传入的参数优先级更高
+      const mergedQuery = { ...defaultQuery, ...to.query }
+      // 检查是否需要重定向（query 参数有变化）
+      const hasChanges = Object.keys(defaultQuery).some((key) => to.query[key] === undefined)
+      if (hasChanges) {
+        return {
+          path: to.path,
+          query: mergedQuery,
+          replace: true
+        }
+      }
+    }
 
     /* ---------- 未登录 ---------- */
     if (!token) {

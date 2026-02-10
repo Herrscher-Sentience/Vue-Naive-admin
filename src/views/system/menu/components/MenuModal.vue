@@ -12,7 +12,7 @@
           <template #label>
             <QuestionLabel content="上级菜单" label="上级菜单" />
           </template>
-          <template v-if="modalForm.menuType === 'M'">
+          <template v-if="modalForm.menuType === MENU_TYPE.DIRECTORY">
             <n-input value="主类目" disabled />
           </template>
           <n-tree-select
@@ -29,19 +29,19 @@
             <QuestionLabel content="菜单类型" label="菜单类型" />
           </template>
           <n-radio-group v-model:value="modalForm.menuType">
-            <n-radio value="M">
+            <n-radio :value="MENU_TYPE.DIRECTORY">
               目录
             </n-radio>
-            <n-radio value="C">
+            <n-radio :value="MENU_TYPE.MENU">
               菜单
             </n-radio>
-            <n-radio value="F">
+            <n-radio :value="MENU_TYPE.BUTTON">
               按钮
             </n-radio>
           </n-radio-group>
         </n-form-item-gi>
 
-        <n-form-item-gi v-if="modalForm.menuType !== 'F'" :span="12" path="icon">
+        <n-form-item-gi v-if="modalForm.menuType !== MENU_TYPE.BUTTON" :span="12" path="icon">
           <template #label>
             <QuestionLabel
               content="如material-symbols:help，图标库地址: https://icones.js.org/collection/all"
@@ -66,29 +66,29 @@
                 </template>
               </n-input>
             </template>
-            <div class="icon-selector-popover">
+            <div class="w-600px max-h-350px p-16">
               <n-input
                 v-model:value="iconSearch"
                 placeholder="搜索图标..."
                 clearable
-                class="mb-3"
+                class="mb-12px"
               >
                 <template #prefix>
                   <i class="i-fe:search text-16" />
                 </template>
               </n-input>
-              <div class="icon-selector-grid">
+              <div class="grid grid-cols-[repeat(10,minmax(0,1fr))] gap-12px max-h-280px overflow-y-auto">
                 <div
                   v-for="icon in filteredIcons"
                   :key="icon"
-                  class="icon-item"
-                  :class="{ selected: modalForm.icon === icon }"
+                  class="flex items-center justify-center h-48px rounded-8px cursor-pointer transition-all-200ms border border-transparent hover:bg-#f0f0f0 hover:border-#d0d0d0"
+                  :class="{ 'bg-#e6f7ff! border-#1890ff!': modalForm.icon === icon }"
                   @click="selectIcon(icon)"
                 >
                   <i :class="`${icon} text-24`" />
                 </div>
               </div>
-              <div class="icon-footer">
+              <div class="mt-12px pt-12px border-t border-#f0f0f0">
                 <span class="text-gray">共 {{ filteredIcons.length }} 个图标</span>
               </div>
             </div>
@@ -107,40 +107,40 @@
           </template>
           <n-input v-model:value="modalForm.menuName" placeholder="请输入菜单名称" />
         </n-form-item-gi>
-        <n-form-item-gi v-if="modalForm.menuType === 'C'" :span="12" path="routeName">
+        <n-form-item-gi v-if="modalForm.menuType === MENU_TYPE.MENU" :span="12" path="routeName">
           <template #label>
             <QuestionLabel content="路由名称" label="路由名称" />
           </template>
           <n-input v-model:value="modalForm.routeName" placeholder="路由名称" />
         </n-form-item-gi>
 
-        <n-form-item-gi v-if="modalForm.menuType !== 'F'" :span="12" path="isFrame">
+        <n-form-item-gi v-if="modalForm.menuType !== MENU_TYPE.BUTTON" :span="12" path="isFrame">
           <template #label>
             <QuestionLabel content="是否外链" label="是否外链" />
           </template>
-          <n-switch v-model:value="modalForm.isFrame">
-            <template #checked>
+          <n-radio-group v-model:value="modalForm.isFrame">
+            <n-radio :value="1">
               是
-            </template>
-            <template #unchecked>
+            </n-radio>
+            <n-radio :value="0">
               否
-            </template>
-          </n-switch>
+            </n-radio>
+          </n-radio-group>
         </n-form-item-gi>
-        <n-form-item-gi v-if="modalForm.menuType !== 'F'" :span="12" path="path">
+        <n-form-item-gi v-if="modalForm.menuType !== MENU_TYPE.BUTTON" :span="12" path="path">
           <template #label>
             <QuestionLabel content="路由地址" label="路由地址" />
           </template>
           <n-input v-model:value="modalForm.path" placeholder="/dashboard" />
         </n-form-item-gi>
 
-        <n-form-item-gi v-if="modalForm.menuType === 'C'" :span="12" path="component">
+        <n-form-item-gi v-if="modalForm.menuType === MENU_TYPE.MENU" :span="12" path="component">
           <template #label>
             <QuestionLabel content="组件路径" label="组件路径" />
           </template>
           <n-input v-model:value="modalForm.component" placeholder="组件路径" />
         </n-form-item-gi>
-        <n-form-item-gi v-if="modalForm.menuType !== 'M'" :span="12" path="perms">
+        <n-form-item-gi v-if="modalForm.menuType !== MENU_TYPE.DIRECTORY" :span="12" path="perms">
           <template #label>
             <QuestionLabel content="权限字符" label="权限字符" />
           </template>
@@ -148,51 +148,51 @@
         </n-form-item-gi>
 
         <!-- 第七排：路由参数和是否缓存 -->
-        <n-form-item-gi v-if="modalForm.menuType === 'C'" :span="12" path="query">
+        <n-form-item-gi v-if="modalForm.menuType === MENU_TYPE.MENU" :span="12" path="query">
           <template #label>
             <QuestionLabel content="路由参数" label="路由参数" />
           </template>
           <n-input v-model:value="modalForm.query" placeholder="路由参数" />
         </n-form-item-gi>
-        <n-form-item-gi v-if="modalForm.menuType === 'C'" :span="12" path="isCache">
+        <n-form-item-gi v-if="modalForm.menuType === MENU_TYPE.MENU" :span="12" path="isCache">
           <template #label>
             <QuestionLabel content="是否缓存" label="是否缓存" />
           </template>
-          <n-switch v-model:value="modalForm.isCache">
-            <template #checked>
+          <n-radio-group v-model:value="modalForm.isCache">
+            <n-radio :value="1">
               缓存
-            </template>
-            <template #unchecked>
+            </n-radio>
+            <n-radio :value="0">
               不缓存
-            </template>
-          </n-switch>
+            </n-radio>
+          </n-radio-group>
         </n-form-item-gi>
 
-        <n-form-item-gi v-if="modalForm.menuType !== 'F'" :span="12" path="visible">
+        <n-form-item-gi v-if="modalForm.menuType !== MENU_TYPE.BUTTON" :span="12" path="visible">
           <template #label>
             <QuestionLabel content="选择隐藏则路由将不会出现在侧边栏，但仍然可以访问" label="显示状态" />
           </template>
-          <n-switch v-model:value="modalForm.visible">
-            <template #checked>
+          <n-radio-group v-model:value="modalForm.visible">
+            <n-radio :value="1">
               显示
-            </template>
-            <template #unchecked>
+            </n-radio>
+            <n-radio :value="0">
               隐藏
-            </template>
-          </n-switch>
+            </n-radio>
+          </n-radio-group>
         </n-form-item-gi>
         <n-form-item-gi :span="12" path="status">
           <template #label>
             <QuestionLabel content="选择停用则路由将不会出现在侧边栏，也不能被访问" label="菜单状态" />
           </template>
-          <n-switch v-model:value="modalForm.status">
-            <template #checked>
+          <n-radio-group v-model:value="modalForm.status">
+            <n-radio :value="1">
               正常
-            </template>
-            <template #unchecked>
+            </n-radio>
+            <n-radio :value="0">
               禁用
-            </template>
-          </n-switch>
+            </n-radio>
+          </n-radio-group>
         </n-form-item-gi>
       </n-grid>
     </n-form>
@@ -204,7 +204,7 @@ import icons from 'isme:icons'
 import { computed, ref, watch } from 'vue'
 import { BasicModal } from '@/components/BasicModal'
 import { useForm, useModal } from '@/composables'
-import { isArray, isBoolean, isNumber } from '@/utils'
+import { isArray, isNumber } from '@/utils'
 import { addPermission, savePermission } from '@/views/system/menu/api.js'
 import QuestionLabel from './QuestionLabel.vue'
 
@@ -217,9 +217,34 @@ const props = defineProps({
 
 const emit = defineEmits(['refresh'])
 
+// 常量定义
+const MENU_TYPE = {
+  DIRECTORY: 'M',
+  MENU: 'C',
+  BUTTON: 'F'
+}
+
+const defaultForm = {
+  menuName: '',
+  parentId: null,
+  menuType: MENU_TYPE.DIRECTORY,
+  icon: '',
+  orderNum: 10,
+  isFrame: 0,
+  path: '/dashboard',
+  routeName: '',
+  component: '',
+  perms: '',
+  query: '',
+  visible: 1,
+  status: 1,
+  isCache: 0
+}
+
 const iconSelectorVisible = ref(false)
 const iconSearch = ref('')
 
+// 图标过滤 - 使用缓存优化性能
 const filteredIcons = computed(() => {
   if (!iconSearch.value)
     return icons
@@ -232,31 +257,12 @@ const selectIcon = (icon) => {
   iconSelectorVisible.value = false
 }
 
-console.log('图标总数:', icons.length)
-console.log('图标列表:', icons)
-
-const defaultForm = {
-  menuName: '',
-  parentId: null,
-  menuType: 'M',
-  icon: '',
-  orderNum: 10,
-  isFrame: false,
-  path: '/dashboard',
-  routeName: '',
-  component: '',
-  perms: '',
-  query: '',
-  visible: true,
-  status: true,
-  isCache: false
-}
-
 const menuTreeOptions = ref([])
 const modalAction = ref('')
 const [modalFormRef, modalForm, validation] = useForm()
 const [modalRef, okLoading] = useModal()
 
+// 将菜单数据转换为树形选择器所需的格式
 const normalizeMenuTree = (list = []) => {
   return list.map((item) => {
     const node = {
@@ -276,14 +282,6 @@ const handleOpen = (options = {}) => {
   modalAction.value = action
 
   modalForm.value = { ...defaultForm, ...row }
-  console.log(modalForm.value)
-
-  const booleanFields = ['isFrame', 'visible', 'status', 'isCache']
-  booleanFields.forEach((key) => {
-    if (isNumber(modalForm.value[key])) {
-      modalForm.value[key] = modalForm.value[key] === 1
-    }
-  })
 
   modalRef.value.open({ ...rest, onOk: onSave })
 }
@@ -294,12 +292,6 @@ const onSave = async () => {
   try {
     let newFormData
     const formData = { ...modalForm.value }
-    const numberFields = ['isFrame', 'visible', 'status', 'isCache']
-    numberFields.forEach((key) => {
-      if (isBoolean(formData[key])) {
-        formData[key] = formData[key] ? 1 : 0
-      }
-    })
 
     // 确保 orderNum 是整数
     if (!isNumber(formData.orderNum)) {
@@ -307,11 +299,21 @@ const onSave = async () => {
     }
 
     // 一级菜单（目录）的 parentId 设置为 0
-    if (formData.menuType === 'M') {
+    if (formData.menuType === MENU_TYPE.DIRECTORY) {
       formData.parentId = 0
     }
     else if (!formData.parentId) {
       formData.parentId = null
+    }
+
+    // 将 visible 和 status 转换为字符串类型（数据库字段类型）
+    // 前端: visible 1=显示, 0=隐藏 | 数据库: visible '0'=显示, '1'=隐藏
+    if (formData.visible !== undefined) {
+      formData.visible = formData.visible === 1 ? '0' : '1'
+    }
+    // 前端: status 1=正常, 0=禁用 | 数据库: status '0'=正常, '1'=停用
+    if (formData.status !== undefined) {
+      formData.status = formData.status === 1 ? '0' : '1'
     }
 
     if (modalAction.value === 'add') {
@@ -345,45 +347,4 @@ defineExpose({
 })
 </script>
 
-<style scoped>
-.icon-selector-popover {
-  width: 600px;
-  max-height: 350px;
-  padding: 16px;
-}
-
-.icon-selector-grid {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 12px;
-  max-height: 280px;
-  overflow-y: auto;
-}
-
-.icon-item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 48px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid transparent;
-}
-
-.icon-item:hover {
-  background-color: #f0f0f0;
-  border-color: #d0d0d0;
-}
-
-.icon-item.selected {
-  background-color: #e6f7ff;
-  border-color: #1890ff;
-}
-
-.icon-footer {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
-}
-</style>
+<style scoped></style>
