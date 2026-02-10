@@ -8,18 +8,13 @@ import { request } from '@/utils'
  */
 export const getMenuList = () => request.get('/menu/list')
 
-export const getButtons = ({ menuId }) => request.get(`/permission/buttons/${menuId}`)
-
 /**
  * 获取组件配置信息
- * 通过API请求获取组件的配置文件
- * @returns {Promise} 返回一个axios请求的Promise对象
  */
 export const getComponents = () => axios.get(`${import.meta.env.VITE_PUBLIC_PATH}components.json`)
+
 /**
- * 添加权限的API请求函数
- * @param {object} data - 要添加的权限数据对象
- * @returns {Promise} - 返回一个Promise对象，包含请求的结果
+ * 添加权限的A
  */
 export const addPermission = (data) => request.post('/menu', data)
 

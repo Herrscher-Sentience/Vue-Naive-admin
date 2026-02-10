@@ -41,7 +41,7 @@
       </div>
     </div>
 
-    <ResAddOrEdit ref="modalRef" :menus="treeData" @refresh="initData" />
+    <MenuModal ref="modalRef" :menus="treeData" @refresh="initData" />
   </CommonPage>
 </template>
 
@@ -50,7 +50,7 @@ import { NButton, NDropdown, NIcon } from 'naive-ui'
 import { onMounted, ref, watch } from 'vue'
 import { CommonPage } from '@/components/CommonPage/index.js'
 import { deletePermission, getMenuList } from '@/views/system/menu/api.js'
-import ResAddOrEdit from '@/views/system/menu/components/ResAddOrEdit.vue'
+import MenuModal from '@/views/system/menu/components/MenuModal.vue'
 
 const treeData = ref([])
 const pattern = ref('')
@@ -113,8 +113,6 @@ watch(
   },
   { immediate: true }
 )
-
-/* ---------- 展开/折叠全部 ---------- */
 
 const expandAll = () => {
   expandedKeys.value = [...allExpandKeys.value]
@@ -262,8 +260,6 @@ const initData = async () => {
 onMounted(() => {
   initData()
 })
-
-/* ---------- 操作 ---------- */
 
 const handleAdd = (data = {}) => {
   modalRef.value?.handleOpen({

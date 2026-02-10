@@ -57,15 +57,11 @@ function findParentKeys(menus, targetKey, parents = []) {
 function updateExpandedKeys() {
   if (!permissionStore.menus?.length)
     return
-  console.log('[SideMenu] updateExpandedKeys - activeKey:', activeKey.value, 'type:', typeof activeKey.value)
-  console.log('[SideMenu] updateExpandedKeys - menus:', permissionStore.menus)
   const parents = findParentKeys(permissionStore.menus, activeKey.value)
-  console.log('[SideMenu] updateExpandedKeys - parents:', parents)
   if (!parents)
     return
   // 直接设置，确保刷新后能正确展开
   expandedKeys.value = parents
-  console.log('[SideMenu] updateExpandedKeys - expandedKeys:', expandedKeys.value)
 }
 
 // 用户手动展开/收起
@@ -94,14 +90,12 @@ function handleMenuSelect(key, item) {
 }
 
 /**
- * 核心逻辑：
  * 1. 监听路由变化，确保刷新后能正确展开到对应菜单
  * 2. 同时监听菜单数据加载完成
  */
 watch(
   () => route.path,
-  (newPath) => {
-    console.log('[SideMenu] route.path changed:', newPath, 'activeKey:', activeKey.value)
+  () => {
     if (permissionStore.menus?.length) {
       nextTick(() => {
         updateExpandedKeys()
@@ -115,7 +109,6 @@ watch(
 watch(
   () => permissionStore.menus?.length,
   (hasMenus) => {
-    console.log('[SideMenu] menus loaded:', hasMenus)
     if (hasMenus) {
       nextTick(() => {
         updateExpandedKeys()
