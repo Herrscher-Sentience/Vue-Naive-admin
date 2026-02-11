@@ -1,13 +1,10 @@
 import { request } from '@/utils'
 
-export default {
-  create: (data) => request.post('/role', data),
-  read: (params = {}) => request.get('/role/page', { params }),
-  update: (data) => request.patch(`/role/${data.id}`, data),
-  delete: (id) => request.delete(`/role/${id}`),
-
-  getAllPermissionTree: () => request.get('/permission/tree'),
-  getAllUsers: (params = {}) => request.get('/user', { params }),
-  addRoleUsers: (roleId, data) => request.patch(`/role/users/add/${roleId}`, data),
-  removeRoleUsers: (roleId, data) => request.patch(`/role/users/remove/${roleId}`, data)
-}
+export const createRole = (data) => request.post('/role', data)
+export const readRole = (params = {}) => request.get('/role/page', { params })
+export const updateRole = (data) => request.patch(`/role/${data.id}`, data)
+export const deleteRole = (id) => request.delete(`/role/${id}`)
+export const getAllPermissionTree = () => request.get('/permission/tree')
+export const getAllUsers = (params = {}) => request.get('/user', { params })
+export const addRoleUsers = (roleId, data) => request.patch(`/role/users/add/${roleId}`, data)
+export const removeRoleUsers = (roleId, data) => request.patch(`/role/users/remove/${roleId}`, data)
