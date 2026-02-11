@@ -1,1 +1,1 @@
-export { default as BasicTable } from './src/BasicTable.vue'
+export { default as BasicQuery } from './src/BasicQuery.vue'

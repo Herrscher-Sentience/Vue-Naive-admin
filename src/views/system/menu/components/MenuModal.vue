@@ -306,16 +306,6 @@ const onSave = async () => {
       formData.parentId = null
     }
 
-    // 将 visible 和 status 转换为字符串类型（数据库字段类型）
-    // 前端: visible 1=显示, 0=隐藏 | 数据库: visible '0'=显示, '1'=隐藏
-    if (formData.visible !== undefined) {
-      formData.visible = formData.visible === 1 ? '0' : '1'
-    }
-    // 前端: status 1=正常, 0=禁用 | 数据库: status '0'=正常, '1'=停用
-    if (formData.status !== undefined) {
-      formData.status = formData.status === 1 ? '0' : '1'
-    }
-
     if (modalAction.value === 'add') {
       const res = await addPermission(formData)
       newFormData = res.data
