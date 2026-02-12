@@ -1,18 +1,10 @@
-/**********************************
- * @Author: Ronnie Zhang
- * @LastEditor: Ronnie Zhang
- * @LastEditTime: 2023/12/12 09:03:00
- * @Email: zclzone@outlook.com
- * Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
- **********************************/
-
 import { cloneDeep } from 'lodash-es'
 import { useForm, useModal } from '.'
 
 const ACTIONS = {
   view: '查看',
   edit: '编辑',
-  add: '新增',
+  add: '新增'
 }
 
 export function useCrud({ name, initForm = {}, doCreate, doDelete, doUpdate, refresh }) {
@@ -50,7 +42,7 @@ export function useCrud({ name, initForm = {}, doCreate, doDelete, doUpdate, ref
           return await handleSave()
         }
       },
-      title: title ?? (ACTIONS[modalAction.value] || '') + name,
+      title: title ?? (ACTIONS[modalAction.value] || '') + name
     })
   }
 
@@ -63,12 +55,12 @@ export function useCrud({ name, initForm = {}, doCreate, doDelete, doUpdate, ref
     const actions = {
       add: {
         api: () => doCreate(modalForm.value),
-        cb: () => $message.success('新增成功'),
+        cb: () => $message.success('新增成功')
       },
       edit: {
         api: () => doUpdate(modalForm.value),
-        cb: () => $message.success('保存成功'),
-      },
+        cb: () => $message.success('保存成功')
+      }
     }
 
     action = action || actions[modalAction.value]
@@ -109,7 +101,7 @@ export function useCrud({ name, initForm = {}, doCreate, doDelete, doUpdate, ref
           d.loading = false
         }
       },
-      ...confirmOptions,
+      ...confirmOptions
     })
   }
 
@@ -125,6 +117,6 @@ export function useCrud({ name, initForm = {}, doCreate, doDelete, doUpdate, ref
     handleEdit,
     handleView,
     handleOpen,
-    handleSave,
+    handleSave
   }
 }

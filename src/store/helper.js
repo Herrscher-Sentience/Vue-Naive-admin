@@ -21,7 +21,7 @@ function transformMenuToPermission(menuItem) {
     order: menuItem.order ?? menuItem.orderNum ?? 0,
     enable: menuItem.enable !== undefined ? menuItem.enable : menuItem.status === 1,
     show: menuItem.show !== undefined ? menuItem.show : (menuItem.visible === 0),
-    keepAlive: menuItem.keepAlive !== undefined ? menuItem.keepAlive : (menuItem.isCache === 0 ? 1 : 0)
+    keepAlive: menuItem.keepAlive !== undefined ? !!menuItem.keepAlive : (menuItem.isCache === 0)
   }
 
   // 处理 component 字段
