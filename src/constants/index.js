@@ -1,9 +1,3 @@
-/**********************************
- * @Author: Ronnie Zhang
- * @Email: zclzone@outlook.com
- * Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
- **********************************/
-
 // 通用状态
 export const STATUS = {
   ENABLED: 1,

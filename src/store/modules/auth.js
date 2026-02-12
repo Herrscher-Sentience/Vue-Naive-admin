@@ -4,7 +4,9 @@ import { usePermissionStore, useRouterStore, useTabStore, useUserStore } from '@
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     accessToken: undefined,
-    refreshToken: undefined
+    refreshToken: undefined,
+    isRefreshing: false, // 是否正在刷新 token
+    refreshSubscribers: [] // 等待 token 刷新完成的订阅者
   }),
   actions: {
     setToken({ accessToken, refreshToken }) {
@@ -13,6 +15,15 @@ export const useAuthStore = defineStore('auth', {
     },
     resetToken() {
       this.$reset()
+    },
+    // 添加订阅者，等待 token 刷新完成
+    addRefreshSubscriber(callback) {
+      this.refreshSubscribers.push(callback)
+    },
+    // 通知所有订阅者 token 已刷新
+    onRefreshed(accessToken) {
+      this.refreshSubscribers.forEach((callback) => callback(accessToken))
+      this.refreshSubscribers = []
     },
     toLogin() {
       const { router, route } = useRouterStore()

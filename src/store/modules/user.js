@@ -8,20 +8,21 @@ export const useUserStore = defineStore('user', {
     userId() {
       return this.userInfo?.id
     },
-    username() {
-      return this.userInfo?.username
+    userName() {
+      return this.userInfo?.userName
     },
-    realName() {
-      return this.userInfo?.realName
+    nickName() {
+      return this.userInfo?.nickName
     },
-    headUrl() {
-      const url = this.userInfo?.headUrl
+    avatar() {
+      const url = this.userInfo?.avatar
       if (!url)
         return ''
       // 如果已经是完整 URL，直接返回
       if (url.startsWith('http://') || url.startsWith('https://'))
         return url
       // 否则拼接后端域名
+
       return `${import.meta.env.VITE_PROXY_TARGET}${url}`
     },
     currentRole() {

@@ -1,6 +1,6 @@
 import { cloneDeep } from 'lodash-es'
 import { auth } from '@/api'
-import { getUserPermissionByToken } from '@/api/modules/permission.js'
+import { getUserPermissionByToken } from '@/api/permission.js'
 import { basePermissions } from '@/settings'
 
 export const getUserInfo = async () => {

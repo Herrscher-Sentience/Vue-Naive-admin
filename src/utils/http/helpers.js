@@ -1,12 +1,3 @@
-/**********************************
- * @FilePath: helpers.js
- * @Author: Ronnie Zhang
- * @LastEditor: Ronnie Zhang
- * @LastEditTime: 2023/12/04 22:46:22
- * @Email: zclzone@outlook.com
- * Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
- **********************************/
-
 import { useAuthStore } from '@/store'
 
 let isConfirming = false
@@ -26,7 +17,7 @@ function handleAuthExpired(content, needTip) {
     },
     cancel() {
       isConfirming = false
-    },
+    }
   })
   return false
 }
@@ -34,7 +25,8 @@ function handleAuthExpired(content, needTip) {
 export function resolveResError(code, message, needTip = true) {
   switch (code) {
     case 401:
-      return handleAuthExpired('登录已过期，是否重新登录？', needTip)
+      // 401 错误由拦截器自动处理 token 刷新，这里不再弹出对话框
+      return '登录已过期'
     case 11007:
     case 11008:
       return handleAuthExpired(`${message}，是否重新登录？`, needTip)

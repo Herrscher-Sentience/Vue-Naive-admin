@@ -39,7 +39,7 @@
         bordered
       >
         <n-descriptions-item label="昵称">
-          {{ userStore.realName }}
+          {{ userStore.nickName }}
         </n-descriptions-item>
         <n-descriptions-item label="性别">
           {{ genders.find((item) => item.value === userStore.userInfo?.gender)?.label ?? '未知' }}
@@ -76,7 +76,7 @@
     <BasicModal ref="profileModalRef" title="修改资料" width="420px" @ok="handleProfileSave()">
       <n-form ref="profileFormRef" :model="profileForm" label-placement="left">
         <n-form-item label="昵称" path="nickName">
-          <n-input v-model:value="profileForm.realName" placeholder="请输入昵称" />
+          <n-input v-model:value="profileForm.nickName" placeholder="请输入昵称" />
         </n-form-item>
         <n-form-item label="性别" path="gender">
           <n-select
@@ -140,7 +140,7 @@ const genders = [
 const [profileModalRef] = useModal()
 const [, profileForm, profileValidation] = useForm({
   id: userStore.userId,
-  realName: userStore.realName,
+  nickName: userStore.nickName,
   gender: userStore.userInfo?.gender ?? 0,
   address: userStore.userInfo?.address,
   email: userStore.userInfo?.email

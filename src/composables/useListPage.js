@@ -1,7 +1,3 @@
-/**********************************
- * @Description: 表格页面 hook，用于管理表格状态和操作
- **********************************/
-
 import { computed, nextTick, reactive, ref } from 'vue'
 
 export function useListPage(options = {}) {

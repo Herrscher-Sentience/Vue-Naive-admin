@@ -1,11 +1,3 @@
-/**********************************
- * @Author: Ronnie Zhang
- * @LastEditor: Ronnie Zhang
- * @LastEditTime: 2023/12/05 21:26:15
- * @Email: zclzone@outlook.com
- * Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
- **********************************/
-
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
@@ -15,4 +7,9 @@ export function setupStore(app) {
   app.use(pinia)
 }
 
-export * from './modules'
+export { useAppStore } from './modules/app'
+export { useAuthStore } from './modules/auth'
+export { usePermissionStore } from './modules/permission'
+export { useRouterStore } from './modules/router'
+export { useTabStore } from './modules/tab'
+export { useUserStore } from './modules/user'

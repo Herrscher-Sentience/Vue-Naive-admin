@@ -3,10 +3,10 @@
     <div class="flex">
       <n-card class="min-w-200 w-30%">
         <div class="flex items-center">
-          <n-avatar round :size="60" :src="userStore.headUrl" class="flex-shrink-0" />
+          <n-avatar round :size="60" :src="userStore.avatar" class="flex-shrink-0" />
           <div class="ml-20 flex-col">
             <span class="text-20 opacity-80">
-              Hello, {{ userStore.realName ?? userStore.username }}
+              Hello, {{ userStore.nickName ?? userStore.userName }}
             </span>
             <span class="mt-4 opacity-50">当前角色：{{ userStore.currentRole?.roleName }}</span>
           </div>
@@ -160,7 +160,7 @@ import VChart from 'vue-echarts'
 import { useUserStore } from '@/store'
 
 const userStore = useUserStore()
-console.log(userStore.realName, userStore.username)
+console.log(userStore.nickName, userStore.userName)
 
 echarts.use([
   TooltipComponent,
