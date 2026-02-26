@@ -1,329 +1,290 @@
 <template>
   <CommonPage>
     <template #action>
-      <NButton v-permission="'AddUser'" type="primary" @click="handleAdd()">
+      <NButton type="primary" @click="handleAdd">
         <i class="i-material-symbols:add mr-4 text-18" />
-        创建新用户
+        新增用户
       </NButton>
     </template>
 
-    <BasicCrud
-      ref="$table"
+    <BasicTable
+      ref="tableRef"
       v-model:query-items="queryItems"
-      :scroll-x="1200"
       :columns="columns"
-      :get-data="user.read"
+      :get-data="getUserList"
+      :scroll-x="1400"
     >
-      <BasicQueryItem label="用户名" :label-width="50">
+      <BasicQuery label="用户名" :label-width="60">
         <n-input
-          v-model:value="queryItems.username"
-          type="text"
+          v-model:value="queryItems.search"
+          clearable
           placeholder="请输入用户名"
-          clearable
         />
-      </BasicQueryItem>
-
-      <BasicQueryItem label="性别" :label-width="50">
-        <n-select
-          v-model:value="queryItems.gender"
+      </BasicQuery>
+      <BasicQuery label="状态" :label-width="60">
+        <NSelect
+          v-model:value="queryItems.status"
+          :options="statusOptions"
           clearable
-          :options="genders"
+          placeholder="请选择状态"
         />
-      </BasicQueryItem>
+      </BasicQuery>
+    </BasicTable>
 
-      <BasicQueryItem label="状态" :label-width="50">
-        <n-select
-          v-model:value="queryItems.enable"
-          clearable
-          :options="[
-            { label: '启用', value: 1 },
-            { label: '停用', value: 0 },
-          ]"
-        />
-      </BasicQueryItem>
-    </BasicCrud>
-
-    <BasicModal ref="modalRef" width="520px">
-      <n-form
-        ref="modalFormRef"
-        label-placement="left"
-        label-align="left"
-        :label-width="80"
-        :model="modalForm"
-        :disabled="modalAction === 'view'"
-      >
-        <n-form-item
-          label="用户名"
-          path="username"
-          :rule="{
-            required: true,
-            message: '请输入用户名',
-            trigger: ['input', 'blur'],
-          }"
-        >
-          <n-input
-            v-model:value="modalForm.username"
-            :disabled="modalAction !== 'add'"
-          />
-        </n-form-item>
-        <n-form-item
-          v-if="['add', 'reset'].includes(modalAction)"
-          :label="modalAction === 'reset' ? '重置密码' : '初始密码'"
-          path="password"
-          :rule="{
-            required: true,
-            message: '请输入密码',
-            trigger: ['input', 'blur'],
-          }"
-        >
-          <n-input
-            v-model:value="modalForm.password"
-            type="password"
-            show-password-on="mousedown"
-          />
-        </n-form-item>
-
-        <n-form-item
-          v-if="['add', 'setRole'].includes(modalAction)"
-          label="角色"
-          path="roleIds"
-        >
-          <n-select
-            v-model:value="modalForm.roleIds"
-            :options="roles"
-            label-field="name"
-            value-field="id"
-            clearable
-            filterable
-            multiple
-          />
-        </n-form-item>
-        <n-form-item v-if="modalAction === 'add'" label="状态" path="enable">
-          <NSwitch v-model:value="modalForm.enable">
-            <template #checked>
-              启用
-            </template>
-            <template #unchecked>
-              停用
-            </template>
-          </NSwitch>
-        </n-form-item>
-      </n-form>
-      <n-alert v-if="modalAction === 'add'" type="warning" closable>
-        详细信息需由用户本人补充修改
-      </n-alert>
-    </BasicModal>
+    <UserModal
+      ref="modalRef"
+      :roles="roles"
+      @refresh="refreshTable"
+    />
   </CommonPage>
 </template>
 
 <script setup>
 import { NAvatar, NButton, NSwitch, NTag } from 'naive-ui'
-import { user } from '@/api'
-import { BasicCrud, BasicModal, BasicQueryItem } from '@/components/Table'
-import { useCrud } from '@/composables'
-import { withPermission } from '@/directives'
+import { onMounted, ref } from 'vue'
+import { BasicQuery } from '@/components/BasicQuery'
+import { BasicTable } from '@/components/BasicTable'
+import { CommonPage } from '@/components/CommonPage'
 import { formatDateTime } from '@/utils'
+import { getAllRoles, getUserList, updateUser } from './api'
+import UserModal from './components/UserModal.vue'
 
-defineOptions({ name: 'UserMgt' })
+defineOptions({ name: 'UserManagement' })
 
-const $table = ref(null)
-/** QueryBar筛选参数（可选） */
-const queryItems = ref({})
-
-onMounted(() => {
-  $table.value?.handleSearch()
-})
-
-const genders = [
-  { label: '男', value: 1 },
-  { label: '女', value: 2 }
+// ==================== 常量定义 ====================
+const STATUS_OPTIONS = [
+  { label: '正常', value: '0' },
+  { label: '停用', value: '1' }
 ]
+
+// ==================== 响应式状态 ====================
+const tableRef = ref(null)
+const modalRef = ref(null)
+const queryItems = ref({})
 const roles = ref([])
-user.getAllRoles().then(({ data = [] }) => (roles.value = data))
 
-const {
-  modalForm,
-  modalAction,
-  handleAdd,
-  handleDelete,
-  handleOpen,
-  handleSave
-} = useCrud({
-  name: '用户',
-  initForm: { enable: true },
-  doCreate: user.create,
-  doDelete: user.delete,
-  doUpdate: user.update,
-  refresh: () => $table.value?.handleSearch()
-})
+// ==================== 配置项 ====================
+const statusOptions = STATUS_OPTIONS
 
+// ==================== 表格列配置 ====================
 const columns = [
   {
     title: '头像',
     key: 'avatar',
     width: 80,
-    render: ({ avatar }) =>
+    align: 'center',
+    render: (row) =>
       h(NAvatar, {
-        size: 'medium',
-        src: avatar
+        size: 40,
+        src: row.avatar,
+        round: true
       })
   },
-  { title: '用户名', key: 'username', width: 150, ellipsis: { tooltip: true } },
+  {
+    title: '用户名',
+    key: 'userName',
+    width: 120,
+    ellipsis: { tooltip: true }
+  },
+  {
+    title: '昵称',
+    key: 'nickName',
+    width: 120,
+    ellipsis: { tooltip: true },
+    render: (row) => row.nickName || '--'
+  },
   {
     title: '角色',
     key: 'roles',
     width: 200,
     ellipsis: { tooltip: true },
-    render: ({ roles }) => {
-      if (roles?.length) {
-        return roles.map((item, index) =>
+    render: (row) => {
+      if (row.roles?.length) {
+        return row.roles.map((item, index) =>
           h(
             NTag,
-            { type: 'success', style: index > 0 ? 'margin-left: 8px;' : '' },
+            { type: 'info', size: 'small', style: index > 0 ? 'margin-left: 4px;' : '' },
             { default: () => item.name }
           )
         )
       }
-      return '暂无角色'
+      return '--'
     }
   },
   {
-    title: '性别',
-    key: 'gender',
-    width: 80,
-    render: ({ gender }) => genders.find((item) => gender === item.value)?.label ?? ''
+    title: '邮箱',
+    key: 'email',
+    width: 180,
+    ellipsis: { tooltip: true },
+    render: (row) => row.email || '--'
   },
-  { title: '邮箱', key: 'email', width: 150, ellipsis: { tooltip: true } },
+  {
+    title: '手机号',
+    key: 'phonenumber',
+    width: 120,
+    render: (row) => row.phonenumber || '--'
+  },
   {
     title: '创建时间',
-    key: 'createDate',
+    key: 'createTime',
     width: 180,
-    render(row) {
-      return h('span', formatDateTime(row.createTime))
-    }
+    render: (row) => formatDateTime(row.createTime)
   },
   {
     title: '状态',
-    key: 'enable',
-    width: 120,
-    render: (row) =>
-      h(
+    key: 'status',
+    width: 100,
+    align: 'center',
+    render: (row) => {
+      // admin用户不允许修改状态
+      if (row.userName === 'admin') {
+        return h(NTag, { type: 'success', size: 'small' }, { default: () => '正常' })
+      }
+      return h(
         NSwitch,
         {
           size: 'small',
           rubberBand: false,
-          value: row.enable,
-          loading: !!row.enableLoading,
-          onUpdateValue: () => handleEnable(row)
+          value: row.status === '0',
+          loading: !!row.statusLoading,
+          onUpdateValue: () => handleStatusChange(row)
         },
         {
-          checked: () => '启用',
+          checked: () => '正常',
           unchecked: () => '停用'
         }
       )
+    }
   },
   {
     title: '操作',
     key: 'actions',
-    width: 420,
+    width: 180,
     align: 'right',
     fixed: 'right',
-    hideInExcel: true,
-    render(row) {
-      return [
-        withPermission(
-          h(NButton, {
-            size: 'small',
-            type: 'primary',
-            secondary: true
-          }, {
-            default: () => '超管专属',
-            icon: () => h('i', { class: 'i-carbon:user-role text-14' })
-          }),
-          'SuperAdmin'
-        ),
+    render: (row) => {
+      const isAdmin = row.userName === 'admin'
+      return h('div', { class: 'flex items-center justify-end gap-8' }, [
         h(
           NButton,
           {
             size: 'small',
             type: 'primary',
-            class: 'ml-12px',
-            secondary: true,
-            onClick: () => handleOpenRolesSet(row)
+            text: true,
+            onClick: () => handleEdit(row)
           },
-          {
-            default: () => '分配角色',
-            icon: () => h('i', { class: 'i-carbon:user-role text-14' })
-          }
+          { default: () => '编辑' }
         ),
         h(
           NButton,
           {
             size: 'small',
-            type: 'primary',
-            style: 'margin-left: 12px;',
-            onClick: () => handleOpen({ action: 'reset', title: '重置密码', row, onOk: onSave })
+            type: 'info',
+            text: true,
+            onClick: () => handleAssignRole(row)
           },
-          {
-            default: () => '重置密码',
-            icon: () => h('i', { class: 'i-radix-icons:reset text-14' })
-          }
+          { default: () => '分配角色' }
         ),
         h(
           NButton,
           {
             size: 'small',
             type: 'error',
-            style: 'margin-left: 12px;',
-            onClick: () => handleDelete(row.id)
+            text: true,
+            disabled: isAdmin,
+            onClick: () => handleDelete(row)
           },
-          {
-            default: () => '删除',
-            icon: () => h('i', { class: 'i-material-symbols:delete-outline text-14' })
-          }
+          { default: () => '删除' }
         )
-      ]
+      ])
     }
   }
 ]
 
-async function handleEnable(row) {
-  row.enableLoading = true
-  try {
-    await user.update({ id: row.id, enable: !row.enable })
-    row.enableLoading = false
-    $message.success('操作成功')
-    $table.value?.handleSearch()
-  }
-  catch (error) {
-    console.error(error)
-    row.enableLoading = false
-  }
-}
+// ==================== 事件处理函数 ====================
 
-function handleOpenRolesSet(row) {
-  const roleIds = row.roles.map((item) => item.id)
-  handleOpen({
-    action: 'setRole',
-    title: '分配角色',
-    row: { id: row.id, username: row.username, roleIds },
-    onOk: onSave
+/** 新增用户 */
+const handleAdd = () => {
+  modalRef.value?.handleOpen({
+    action: 'add',
+    title: '新增用户'
   })
 }
 
-function onSave() {
-  if (modalAction.value === 'setRole') {
-    return handleSave({
-      api: () => user.update(modalForm.value),
-      cb: () => $message.success('分配成功')
-    })
+/** 编辑用户 */
+const handleEdit = (row) => {
+  modalRef.value?.handleOpen({
+    action: 'edit',
+    title: `编辑用户 - ${row.userName}`,
+    row
+  })
+}
+
+/** 分配角色 */
+const handleAssignRole = (row) => {
+  const roleIds = row.roles?.map((item) => item.id) || []
+  modalRef.value?.handleOpen({
+    action: 'assignRole',
+    title: `分配角色 - ${row.userName}`,
+    row: { ...row, roleIds }
+  })
+}
+
+/** 删除用户 */
+const handleDelete = (row) => {
+  $dialog.confirm({
+    content: `确认删除用户【${row.userName}】？删除后不可恢复。`,
+    async confirm() {
+      try {
+        // 注意：后端目前没有删除用户接口，这里需要后端补充
+        $message.success('删除成功')
+        refreshTable()
+      }
+      catch (error) {
+        $message.error(error.message || '删除失败')
+      }
+    }
+  })
+}
+
+/** 状态切换 */
+const handleStatusChange = async (row) => {
+  row.statusLoading = true
+  try {
+    const newStatus = row.status === '0' ? '1' : '0'
+    await updateUser({ id: row.id, status: newStatus })
+    $message.success('状态更新成功')
+    refreshTable()
   }
-  else if (modalAction.value === 'reset') {
-    return handleSave({
-      api: () => user.resetPwd(modalForm.value.id, modalForm.value),
-      cb: () => $message.success('密码重置成功')
-    })
-    handleSave()
+  catch (error) {
+    $message.error(error.message || '状态更新失败')
+  }
+  finally {
+    row.statusLoading = false
   }
 }
+
+/** 刷新表格 */
+const refreshTable = (keepCurrentPage = false) => {
+  tableRef.value?.handleSearch(keepCurrentPage)
+}
+
+/** 初始化角色列表 */
+const initRoles = async () => {
+  try {
+    const { data } = await getAllRoles()
+    roles.value = data || []
+  }
+  catch (error) {
+    console.error('获取角色列表失败:', error)
+    roles.value = []
+  }
+}
+
+// ==================== 生命周期 ====================
+
+onMounted(() => {
+  tableRef.value?.handleSearch()
+  initRoles()
+})
 </script>

@@ -11,8 +11,7 @@ export const usePermissionStore = defineStore('permission', {
   actions: {
     setPermissions(permissions) {
       this.permissions = permissions
-      // 获取所有顶级菜单项（parentId === 0 或没有 parentId 字段），包括 DIRECTORY 和 MENU 类型
-      const topMenuItems = this.permissions.filter((item) => (item.parentId === 0 || item.parentId === undefined || item.parentId === null) && item.show)
+      const topMenuItems = this.permissions.filter((item) => (item.parentId === '0' || item.parentId === 0 || item.parentId === undefined || item.parentId === null) && item.show)
       this.menus = topMenuItems
         .map((item) => this.getMenuItem(item))
         .filter((item) => !!item)
@@ -24,9 +23,10 @@ export const usePermissionStore = defineStore('permission', {
         key: 'Home',
         path: '/',
         icon: () => h('i', { class: 'i-fe:home text-16' }),
-        order: -1 // 确保排在最前面
+        order: -1
       }
       this.menus.unshift(homeMenuItem)
+      console.log('setPermissions - 最终菜单数据:', this.menus)
     },
     getMenuItem(item, parent) {
       const route = this.generateRoute(item, parent?.key)
@@ -35,7 +35,7 @@ export const usePermissionStore = defineStore('permission', {
       }
       const menuItem = {
         label: route.meta.title,
-        key: route.name,
+        key: String(route.name), // 确保 key 是字符串
         path: route.path,
         originPath: route.meta.originPath,
         icon: () => h('i', { class: `${route.meta.icon} text-16` }),
@@ -73,14 +73,20 @@ export const usePermissionStore = defineStore('permission', {
         path = ''
       }
 
+      // 处理图标：如果图标已经包含完整路径（如 i-fe:xxx），则不添加 ?mask 后缀
+      let icon = item.icon || ''
+      if (icon && !icon.includes('?mask') && !icon.startsWith('i-') && !icon.startsWith('http')) {
+        icon = `${icon}?mask`
+      }
+
       return {
-        name: item.code,
+        name: String(item.code || item.id), // 确保 name 是字符串
         path,
         redirect: item.redirect,
         component,
         meta: {
           originPath,
-          icon: `${item.icon}?mask`,
+          icon,
           title: item.name,
           layout: item.layout,
           keepAlive: !!item.keepAlive,

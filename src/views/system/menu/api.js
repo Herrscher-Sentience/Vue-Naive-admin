@@ -1,23 +1,29 @@
-import axios from 'axios'
 import { request } from '@/utils'
 
 /**
- * 获取菜单列表数据
- * 该函数通过调用API接口获取系统的菜单按钮列表信息
- * @returns {Promise} 返回一个Promise对象，包含菜单列表数据
+ * 获取菜单树列表
+ * @returns {Promise} 返回菜单树数据
  */
 export const getMenuList = () => request.get('/menu/list')
 
 /**
- * 获取组件配置信息
+ * 创建菜单
+ * @param {object} data 菜单数据
+ * @returns {Promise}
  */
-export const getComponents = () => axios.get(`${import.meta.env.VITE_PUBLIC_PATH}components.json`)
+export const createMenu = (data) => request.post('/menu', data)
 
 /**
- * 添加权限的A
+ * 更新菜单
+ * @param {number} id 菜单ID
+ * @param {object} data 菜单数据
+ * @returns {Promise}
  */
-export const addPermission = (data) => request.post('/menu', data)
+export const updateMenu = (id, data) => request.patch(`/menu/${id}`, data)
 
-export const savePermission = (id, data) => request.patch(`/menu/${id}`, data)
-
-export const deletePermission = (id) => request.delete(`menu/${id}`)
+/**
+ * 删除菜单
+ * @param {number} id 菜单ID
+ * @returns {Promise}
+ */
+export const deleteMenu = (id) => request.delete(`/menu/${id}`)

@@ -4,7 +4,7 @@
       <n-avatar round :size="36" :src="userStore.avatar" />
       <div v-if="userStore.userInfo" class="ml-12 flex-col flex-shrink-0 items-center">
         <span class="text-14">{{ userStore.nickName ?? userStore.userName }}</span>
-        <span class="text-12 opacity-50">[{{ userStore.currentRole?.roleName }}]</span>
+        <span class="text-12 opacity-50">[{{ userStore.currentRole?.name }}]</span>
       </div>
     </div>
   </n-dropdown>

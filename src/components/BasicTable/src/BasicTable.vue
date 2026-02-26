@@ -36,7 +36,7 @@
       :data="tableData"
       :loading="loading"
       :pagination="isPagination ? pagination : false"
-      :remote="remote"
+      :remote="true"
       :row-key="(row) => row[rowKey]"
       :scroll-x="scrollX"
       class="flex-1"
@@ -52,13 +52,6 @@ import { NDataTable } from 'naive-ui'
 import { AppCard } from '@/components/AppCard/index.js'
 
 const props = defineProps({
-  /**
-   * @remote true: 后端分页  false： 前端分页
-   */
-  remote: {
-    type: Boolean,
-    default: true
-  },
   /**
    * @isPagination 是否分页
    */
@@ -88,11 +81,11 @@ const props = defineProps({
   /**
    * ! 约定接口入参出参
    * 分页模式需约定分页接口入参
-   *    @pageSize 分页参数：一页展示多少条，默认10
-   *    @pageNo   分页参数：页码，默认1
+   *    @limit 分页参数：一页展示多少条，默认10
+   *    @page  分页参数：页码，默认1
    * 需约定接口出参
-   *    @pageData 分页模式必须,非分页模式如果没有pageData则取上一层data
-   *    @total    分页模式必须，非分页模式如果没有total则取上一层data.length
+   *    @data  分页模式必须,非分页模式如果没有data则取上一层data
+   *    @total 分页模式必须，非分页模式如果没有total则取上一层data.length
    */
   getData: {
     type: Function,
@@ -125,15 +118,16 @@ async function handleQuery() {
   try {
     loading.value = true
     let paginationParams = {}
-    // 如果非分页模式或者使用前端分页,则无需传分页参数
-    if (props.isPagination && props.remote) {
-      paginationParams = { pageNo: pagination.page, pageSize: pagination.pageSize }
+    // 分页模式传递分页参数
+    if (props.isPagination) {
+      paginationParams = { page: pagination.page, limit: pagination.pageSize }
     }
     const { data } = await props.getData({
       ...props.queryItems,
       ...paginationParams
     })
-    tableData.value = data?.pageData || data
+    // 支持后端返回的 data 或 pageData 字段
+    tableData.value = data?.pageData || data?.data || data
     pagination.itemCount = data.total ?? data.length
     if (pagination.itemCount && !tableData.value.length && pagination.page > 1) {
       // 如果当前页数据为空，且总条数不为0，则返回上一页数据
@@ -152,7 +146,7 @@ async function handleQuery() {
 }
 
 function handleSearch(keepCurrentPage = false) {
-  if (keepCurrentPage || !props.remote) {
+  if (keepCurrentPage) {
     handleQuery()
   }
   else {
@@ -173,9 +167,7 @@ async function handleReset() {
 
 function onPageChange(currentPage) {
   pagination.page = currentPage
-  if (props.remote) {
-    handleQuery()
-  }
+  handleQuery()
 }
 
 function onChecked(rowKeys) {
@@ -184,7 +176,7 @@ function onChecked(rowKeys) {
   }
 }
 
-function handleExport(columns = props.columns, data = tableData.value) {
+function handleExport(_columns = props.columns, data = tableData.value) {
   if (!data?.length)
     return $message.warning('没有数据')
 }

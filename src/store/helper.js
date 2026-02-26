@@ -10,23 +10,37 @@ export const getUserInfo = async () => {
 
 // 将后端菜单数据转换为前端权限格式
 function transformMenuToPermission(menuItem) {
+  // menuType: "M" 表示目录(DIRECTORY), "C" 表示菜单(MENU)
+  const menuType = menuItem.menuType
+  let type = 'MENU'
+  if (menuType === 'M') {
+    type = 'DIRECTORY'
+  }
+  else if (menuType === 'C') {
+    type = 'MENU'
+  }
+  else if (menuItem.type) {
+    // 如果没有 menuType，使用原始 type 字段
+    type = menuItem.type
+  }
+
   const transformed = {
     id: menuItem.id,
     parentId: menuItem.parentId,
     code: menuItem.code || menuItem.id,
     name: menuItem.menuName || menuItem.name || '',
-    type: menuItem.type, // 保留原始 type 字段（DIRECTORY 或 MENU）
+    type, // 转换后的 type 字段（DIRECTORY 或 MENU）
     path: menuItem.path,
     icon: menuItem.icon || '',
     order: menuItem.order ?? menuItem.orderNum ?? 0,
-    enable: menuItem.enable !== undefined ? menuItem.enable : menuItem.status === 1,
-    show: menuItem.show !== undefined ? menuItem.show : (menuItem.visible === 0),
+    enable: menuItem.enable !== undefined ? menuItem.enable : (menuItem.status === 0),
+    // 优先使用 visible 字段判断是否显示，因为 show 字段可能不准确
+    show: menuItem.visible !== undefined ? (menuItem.visible === 1) : (menuItem.show === true),
     keepAlive: menuItem.keepAlive !== undefined ? !!menuItem.keepAlive : (menuItem.isCache === 0)
   }
 
   // 处理 component 字段
   if (menuItem.component) {
-    // 将 component 转换为 /src/views/xxx.vue 格式（匹配 import.meta.glob 返回的路径）
     let componentPath = menuItem.component
     if (!componentPath.startsWith('/src/views/')) {
       componentPath = `/src/views/${componentPath}`
@@ -56,11 +70,9 @@ export const getUserPermission = async () => {
   let asyncPermissions = []
   try {
     const { data: result } = await getUserPermissionByToken()
-    console.log('后端返回的原始菜单数据:', result.menu)
 
     if (result.menu) {
       asyncPermissions = result.menu.map((item) => transformMenuToPermission(item))
-      console.log('转换后的菜单数据:', asyncPermissions)
     }
   }
   catch (error) {
@@ -68,6 +80,5 @@ export const getUserPermission = async () => {
   }
 
   const finalPermissions = cloneDeep(basePermissions).concat(asyncPermissions)
-  console.log('最终权限数据:', finalPermissions)
   return finalPermissions
 }

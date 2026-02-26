@@ -8,7 +8,7 @@
             <span class="text-20 opacity-80">
               Hello, {{ userStore.nickName ?? userStore.userName }}
             </span>
-            <span class="mt-4 opacity-50">当前角色：{{ userStore.currentRole?.roleName }}</span>
+            <span class="mt-4 opacity-50">当前角色：{{ userStore.currentRole?.name }}</span>
           </div>
         </div>
 

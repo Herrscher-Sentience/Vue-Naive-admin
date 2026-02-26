@@ -1,215 +1,224 @@
 <template>
   <CommonPage>
     <template #action>
-      <NButton type="primary" @click="handleAdd()">
+      <NButton type="primary" @click="handleAdd">
         <i class="i-material-symbols:add mr-4 text-18" />
         新增角色
       </NButton>
     </template>
 
     <BasicTable
-      ref="$table"
+      ref="tableRef"
       v-model:query-items="queryItems"
       :columns="columns"
-      :get-data="role.read"
+      :get-data="getRolePage"
       :scroll-x="1200"
     >
-      <BasicQuery :label-width="50" label="角色名">
-        <n-input v-model:value="queryItems.name" clearable placeholder="请输入角色名" type="text" />
-      </BasicQuery>
-      <BasicQuery :label-width="50" label="状态">
-        <n-select
-          v-model:value="queryItems.enable"
-          :options="[
-            { label: '启用', value: 1 },
-            { label: '停用', value: 0 },
-          ]"
+      <BasicQuery label="角色名" :label-width="60">
+        <n-input
+          v-model:value="queryItems.name"
           clearable
+          placeholder="请输入角色名"
+        />
+      </BasicQuery>
+      <BasicQuery label="状态" :label-width="60">
+        <NSelect
+          v-model:value="queryItems.status"
+          :options="statusOptions"
+          clearable
+          placeholder="请选择状态"
         />
       </BasicQuery>
     </BasicTable>
-    <BasicModal ref="modalRef" width="520px">
-      <n-form
-        ref="modalFormRef"
-        :label-width="80"
-        :model="modalForm"
-        label-align="left"
-        label-placement="left"
-      >
-        <n-form-item
-          :rule="{
-            required: true,
-            message: '请输入角色名',
-            trigger: ['input', 'blur'],
-          }"
-          label="角色名"
-          path="name"
-        >
-          <n-input v-model:value="modalForm.name" />
-        </n-form-item>
-        <n-form-item
-          :rule="{
-            required: true,
-            message: '请输入角色编码',
-            trigger: ['input', 'blur'],
-          }"
-          label="角色编码"
-          path="code"
-        >
-          <n-input v-model:value="modalForm.code" :disabled="modalAction !== 'add'" />
-        </n-form-item>
-        <n-form-item label="权限" path="permissionIds">
-          <n-tree
-            :checked-keys="modalForm.permissionIds"
-            :data="permissionTree"
-            :on-update:checked-keys="(keys) => (modalForm.permissionIds = keys)"
-            :selectable="false"
-            check-on-click
-            checkable
 
-            class="cus-scroll max-h-200 w-full" default-expand-all key-field="id"
-            label-field="name"
-          />
-        </n-form-item>
-        <n-form-item label="状态" path="enable">
-          <NSwitch v-model:value="modalForm.enable">
-            <template #checked>
-              启用
-            </template>
-            <template #unchecked>
-              停用
-            </template>
-          </NSwitch>
-        </n-form-item>
-      </n-form>
-    </BasicModal>
+    <RoleModal
+      ref="modalRef"
+      :permission-tree="permissionTree"
+      @refresh="refreshTable"
+    />
   </CommonPage>
 </template>
 
 <script setup>
-import { NButton, NSwitch } from 'naive-ui'
-import { role } from '@/api'
-import { BasicModal } from '@/components/BasicModal'
+import { NButton, NSelect, NSwitch, NTag } from 'naive-ui'
+import { onMounted, ref } from 'vue'
 import { BasicQuery } from '@/components/BasicQuery'
 import { BasicTable } from '@/components/BasicTable'
 import { CommonPage } from '@/components/CommonPage'
-import { useCrud } from '@/composables'
+import { getMenuList } from '@/views/system/menu/api.js'
+import { deleteRole, getRolePage, updateRole } from './api'
+import RoleModal from './components/RoleModal.vue'
 
-defineOptions({ name: 'RoleMgt' })
+defineOptions({ name: 'RoleManagement' })
 
-const router = useRouter()
+// ==================== 常量定义 ====================
+const STATUS_OPTIONS = [
+  { label: '启用', value: '1' },
+  { label: '停用', value: '0' }
+]
 
-const $table = ref(null)
-/** QueryBar筛选参数（可选） */
+// ==================== 响应式状态 ====================
+const tableRef = ref(null)
+const modalRef = ref(null)
 const queryItems = ref({})
+const permissionTree = ref([])
 
-onMounted(() => {
-  $table.value?.handleSearch()
-})
+// ==================== 配置项 ====================
+const statusOptions = STATUS_OPTIONS
 
-const { modalRef, modalFormRef, modalAction, modalForm, handleAdd, handleDelete, handleEdit }
-  = useCrud({
-    name: '角色',
-    doCreate: role.create,
-    doDelete: role.delete,
-    doUpdate: role.update,
-    initForm: { enable: true },
-    refresh: (_, keepCurrentPage) => $table.value?.handleSearch(keepCurrentPage)
-  })
-
+// ==================== 表格列配置 ====================
 const columns = [
-  { title: '角色名', key: 'name' },
-  { title: '角色编码', key: 'code' },
+  {
+    title: '角色名称',
+    key: 'name',
+    width: 150,
+    ellipsis: { tooltip: true }
+  },
+  {
+    title: '角色值',
+    key: 'value',
+    width: 150,
+    ellipsis: { tooltip: true }
+  },
   {
     title: '状态',
-    key: 'enable',
-    render: (row) =>
-      h(
+    key: 'status',
+    width: 100,
+    align: 'center',
+    render: (row) => {
+      if (row.value === 'admin') {
+        return h(NTag, { type: 'success', size: 'small' }, { default: () => '启用' })
+      }
+      return h(
         NSwitch,
         {
           size: 'small',
           rubberBand: false,
-          value: row.enable,
-          loading: !!row.enableLoading,
-          disabled: row.code === 'SUPER_ADMIN',
-          onUpdateValue: () => handleEnable(row)
+          value: row.status === '1',
+          loading: !!row.statusLoading,
+          onUpdateValue: () => handleStatusChange(row)
         },
         {
           checked: () => '启用',
           unchecked: () => '停用'
         }
       )
+    }
+  },
+  {
+    title: '备注',
+    key: 'remark',
+    width: 200,
+    ellipsis: { tooltip: true },
+    render: (row) => row.remark || '--'
   },
   {
     title: '操作',
     key: 'actions',
-    width: 320,
-    align: 'right',
+    width: 80,
+    align: 'center',
     fixed: 'right',
-    render(row) {
-      return [
+    render: (row) => {
+      const isSuperAdmin = row.value === 'admin'
+      return h('div', { class: 'flex items-center justify-center gap-12' }, [
         h(
           NButton,
           {
             size: 'small',
             type: 'primary',
-            secondary: true,
-            onClick: () =>
-              router.push({ path: `/system/role/user/${row.id}`, query: { roleName: row.name } })
-          },
-          {
-            default: () => '分配用户',
-            icon: () => h('i', { class: 'i-fe:user-plus text-14' })
-          }
-        ),
-        h(
-          NButton,
-          {
-            size: 'small',
-            type: 'primary',
-            style: 'margin-left: 12px;',
-            disabled: row.code === 'SUPER_ADMIN',
+            text: true,
             onClick: () => handleEdit(row)
           },
-          {
-            default: () => '编辑',
-            icon: () => h('i', { class: 'i-material-symbols:edit-outline text-14' })
-          }
+          { default: () => '编辑' }
         ),
-
         h(
           NButton,
           {
             size: 'small',
             type: 'error',
-            style: 'margin-left: 12px;',
-            disabled: row.code === 'SUPER_ADMIN',
-            onClick: () => handleDelete(row.id)
+            text: true,
+            disabled: isSuperAdmin,
+            onClick: () => handleDelete(row)
           },
-          {
-            default: () => '删除',
-            icon: () => h('i', { class: 'i-material-symbols:delete-outline text-14' })
-          }
+          { default: () => '删除' }
         )
-      ]
+      ])
     }
   }
 ]
 
-async function handleEnable(row) {
-  row.enableLoading = true
+/** 新增角色 */
+const handleAdd = () => {
+  modalRef.value?.handleOpen({
+    action: 'add',
+    title: '新增角色'
+  })
+}
+
+/** 编辑角色 */
+const handleEdit = async (row) => {
+  modalRef.value?.handleOpen({
+    action: 'edit',
+    title: `编辑角色 - ${row.name}`,
+    row
+  })
+}
+
+/** 删除角色 */
+const handleDelete = (row) => {
+  $dialog.confirm({
+    content: `确认删除角色【${row.name}】？删除后不可恢复。`,
+    async confirm() {
+      try {
+        await deleteRole(row.id)
+        $message.success('删除成功')
+        refreshTable()
+      }
+      catch (error) {
+        $message.error(error.message || '删除失败')
+      }
+    }
+  })
+}
+
+/** 状态切换 */
+const handleStatusChange = async (row) => {
+  row.statusLoading = true
   try {
-    await role.update({ id: row.id, enable: !row.enable })
-    row.enableLoading = false
-    $message.success('操作成功')
-    $table.value?.handleSearch()
+    const newStatus = row.status === '1' ? '0' : '1'
+    await updateRole(row.id, { status: newStatus })
+    $message.success('状态更新成功')
+    refreshTable()
   }
   catch (error) {
-    console.error(error)
-    row.enableLoading = false
+    $message.error(error.message || '状态更新失败')
+  }
+  finally {
+    row.statusLoading = false
   }
 }
 
-const permissionTree = ref([])
-role.getAllPermissionTree().then(({ data = [] }) => (permissionTree.value = data))
+/** 刷新表格 */
+const refreshTable = (keepCurrentPage = false) => {
+  tableRef.value?.handleSearch(keepCurrentPage)
+}
+
+/** 初始化权限树 */
+const initPermissionTree = async () => {
+  try {
+    const { data: result } = await getMenuList()
+    permissionTree.value = result || []
+  }
+  catch (error) {
+    console.error('获取菜单树失败:', error)
+    permissionTree.value = []
+  }
+}
+
+// ==================== 生命周期 ====================
+
+onMounted(() => {
+  tableRef.value?.handleSearch()
+  initPermissionTree()
+})
 </script>

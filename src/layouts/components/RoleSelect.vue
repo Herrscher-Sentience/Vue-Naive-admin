@@ -1,15 +1,15 @@
 <template>
   <BasicModal ref="modalRef" title="请选择角色" width="360px" class="p-12">
-    <n-radio-group v-model:value="roleCode" class="cus-scroll-y max-h-420 w-full py-16">
+    <n-radio-group v-model:value="dataScope" class="cus-scroll-y max-h-420 w-full py-16">
       <n-space vertical :size="24" class="mx-12">
         <n-radio-button
           v-for="role in roles"
           :key="role.id"
           class="h-36 w-full text-center text-16 leading-36"
-          :class="{ 'bg-primary! color-white!': role.code === roleCode }"
-          :value="role.roleCode"
+          :class="{ 'bg-primary! color-white!': role.dataScope === dataScope }"
+          :value="role.value"
         >
-          {{ role.roleName }}
+          {{ role.name }}
         </n-radio-button>
       </n-space>
     </n-radio-group>
@@ -24,7 +24,7 @@
           class="ml-20 flex-1"
           type="primary"
           size="large"
-          :disabled="userStore.currentRole?.roleCode === roleCode"
+          :disabled="userStore.currentRole?.dataScope === dataScope"
           @click="setCurrentRole"
         >
           确认
@@ -44,7 +44,9 @@ const userStore = useUserStore()
 const authStore = useAuthStore()
 
 const roles = ref(userStore.roles || [])
-const roleCode = ref(userStore.currentRole?.roleCode ?? roles.value[0]?.roleCode ?? '')
+console.log(userStore.roles)
+
+const dataScope = ref(userStore.currentRole?.dataScope ?? roles.value[0]?.dataScope ?? '')
 
 const [modalRef, okLoading] = useModal()
 function open(options) {

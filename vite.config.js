@@ -49,8 +49,10 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 3200,
       open: true,
+      // 禁用热更新时浏览器自动聚焦
       hmr: {
-        overlay: false
+        protocol: 'ws', // 使用ws协议避免http触发的焦点问题
+        focus: false
       },
       proxy: {
         '/api': {
