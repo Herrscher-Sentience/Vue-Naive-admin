@@ -95,3 +95,17 @@ export function useResize(el, cb) {
   observer.observe(el)
   return observer
 }
+
+export const resolveAssetUrl = (url) => {
+  if (!url)
+    return ''
+
+  // 已经是完整 URL
+  if (/^https?:\/\//i.test(url)) {
+    return url
+  }
+
+  const base = import.meta.env.VITE_PROXY_TARGET ?? ''
+
+  return `${base}${url}`
+}

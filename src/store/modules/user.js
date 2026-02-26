@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { resolveAssetUrl } from '@/utils/index.js'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -15,15 +16,7 @@ export const useUserStore = defineStore('user', {
       return this.userInfo?.nickName
     },
     avatar() {
-      const url = this.userInfo?.avatar
-      if (!url)
-        return ''
-      // 如果已经是完整 URL，直接返回
-      if (url.startsWith('http://') || url.startsWith('https://'))
-        return url
-      // 否则拼接后端域名
-
-      return `${import.meta.env.VITE_PROXY_TARGET}${url}`
+      return resolveAssetUrl(this.userInfo?.avatar)
     },
     currentRole() {
       return this.userInfo?.currentRole || {}

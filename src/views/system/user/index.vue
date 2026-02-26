@@ -14,14 +14,14 @@
       :get-data="getUserList"
       :scroll-x="1400"
     >
-      <BasicQuery label="用户名" :label-width="60">
+      <BasicQuery :label-width="60" label="用户名">
         <n-input
           v-model:value="queryItems.search"
           clearable
           placeholder="请输入用户名"
         />
       </BasicQuery>
-      <BasicQuery label="状态" :label-width="60">
+      <BasicQuery :label-width="60" label="状态">
         <NSelect
           v-model:value="queryItems.status"
           :options="statusOptions"
@@ -41,12 +41,12 @@
 
 <script setup>
 import { NAvatar, NButton, NSwitch, NTag } from 'naive-ui'
-import { onMounted, ref } from 'vue'
+import { h, onMounted, ref } from 'vue'
 import { BasicQuery } from '@/components/BasicQuery'
 import { BasicTable } from '@/components/BasicTable'
 import { CommonPage } from '@/components/CommonPage'
-import { formatDateTime } from '@/utils'
-import { getAllRoles, getUserList, updateUser } from './api'
+import { formatDateTime, resolveAssetUrl } from '@/utils'
+import { deleteUser, getAllRoles, getUserList, updateUserStatus } from './api'
 import UserModal from './components/UserModal.vue'
 
 defineOptions({ name: 'UserManagement' })
@@ -76,7 +76,7 @@ const columns = [
     render: (row) =>
       h(NAvatar, {
         size: 40,
-        src: row.avatar,
+        src: resolveAssetUrl(row.avatar),
         round: true
       })
   },
@@ -236,7 +236,7 @@ const handleDelete = (row) => {
     content: `确认删除用户【${row.userName}】？删除后不可恢复。`,
     async confirm() {
       try {
-        // 注意：后端目前没有删除用户接口，这里需要后端补充
+        await deleteUser(row.userId)
         $message.success('删除成功')
         refreshTable()
       }
@@ -252,7 +252,7 @@ const handleStatusChange = async (row) => {
   row.statusLoading = true
   try {
     const newStatus = row.status === '0' ? '1' : '0'
-    await updateUser({ id: row.id, status: newStatus })
+    await updateUserStatus(row.userId, newStatus)
     $message.success('状态更新成功')
     refreshTable()
   }

@@ -72,8 +72,12 @@
       <!-- 状态（新增时显示） -->
       <n-form-item v-if="modalAction === 'add'" path="status" label="状态">
         <n-radio-group v-model:value="formData.status">
-          <n-radio value="0">正常</n-radio>
-          <n-radio value="1">停用</n-radio>
+          <n-radio value="0">
+            正常
+          </n-radio>
+          <n-radio value="1">
+            停用
+          </n-radio>
         </n-radio-group>
       </n-form-item>
     </n-form>
@@ -147,7 +151,7 @@ const roleOptions = computed(() => props.roles)
 
 /**
  * 打开弹窗
- * @param {Object} options 配置选项
+ * @param {object} options 配置选项
  */
 const handleOpen = (options = {}) => {
   const { action, row = {}, ...rest } = options
@@ -156,7 +160,7 @@ const handleOpen = (options = {}) => {
   if (action === 'assignRole') {
     // 分配角色模式：只显示角色选择
     formData.value = {
-      id: row.id,
+      userId: row.userId,
       userName: row.userName,
       roleIds: row.roleIds || []
     }
@@ -193,7 +197,6 @@ const handleSave = async () => {
     }
     else if (modalAction.value === 'edit' || modalAction.value === 'assignRole') {
       const submitData = {
-        id: formData.value.id,
         roleIds: formData.value.roleIds
       }
       if (modalAction.value === 'edit') {
@@ -201,7 +204,7 @@ const handleSave = async () => {
         submitData.email = formData.value.email
         submitData.phonenumber = formData.value.phonenumber
       }
-      await updateUser(submitData)
+      await updateUser(formData.value.userId, submitData)
     }
 
     $message.success('保存成功')
